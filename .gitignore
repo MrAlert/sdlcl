@@ -1,0 +1,9 @@
+# Generated dependency files
+*.d
+# Object files
+*.o
+# Shared object files
+*.so.*
+# Generated header files
+redir.h
+unredir.h
