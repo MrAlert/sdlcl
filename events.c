@@ -670,7 +670,7 @@ int SDLCALL SDL_PollEvent (SDL1_Event *event) {
 				event->button.type = (event2.type == SDL_MOUSEBUTTONDOWN) ? SDL1_MOUSEBUTTONDOWN : SDL1_MOUSEBUTTONUP;
 				event->button.which = 0;
 				event->button.button = event2.button.button;
-				event->0button.state = event2.button.state;
+				event->button.state = event2.button.state;
 				event->button.x = event2.button.x;
 				event->button.y = event2.button.y;
 				return 1;
