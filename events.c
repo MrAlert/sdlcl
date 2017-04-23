@@ -38,6 +38,15 @@ int SDLCALL SDL_EnableUNICODE (int enable) {
 	return oldunicode;
 }
 
+static int key_delay = 1;
+static int key_interval = 1;
+
+int SDLCALL SDL_EnableKeyRepeat (int delay, int interval) {
+	key_delay = delay;
+	key_interval = interval;
+	return 0;
+}
+
 int SDLCALL SDL_JoystickEventState (int state) {
 	return rSDL_JoystickEventState(state);
 }
@@ -700,6 +709,7 @@ int SDLCALL SDL_PollEvent (SDL1_Event *event) {
 		switch (event2.type) {
 			case SDL_KEYDOWN:
 			case SDL_KEYUP:
+				if (!key_delay && event2.key.repeat) break;
 				event->key.type = (event2.type == SDL_KEYDOWN) ? SDL1_KEYDOWN : SDL1_KEYUP;
 				event->key.which = 0;
 				event->key.state = event2.key.state;
