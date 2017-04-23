@@ -78,6 +78,7 @@ SDL2_SYMBOL(SDL_GetCurrentAudioDriver, const char *, (void))
 SDL2_SYMBOL(SDL_JoystickEventState, int, (int state))
 SDL2_SYMBOL(SDL_GetModState, SDL_Keymod, (void))
 SDL2_SYMBOL(SDL_PollEvent, int, (SDL_Event *event))
+SDL2_SYMBOL(SDL_PumpEvents, void, (void))
 
 /* Joystick subsystem */
 SDL2_SYMBOL(SDL_NumJoysticks, int, (void))

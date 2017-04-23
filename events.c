@@ -608,6 +608,12 @@ typedef enum {
 	SDL1_NUM_EVENTS = 32
 } SDL1_EventType;
 
+typedef struct SDL1_ActiveEvent {
+	Uint8 type;
+	Uint8 gain;
+	Uint8 state;
+} SDL1_ActiveEvent;
+
 typedef struct SDL1_KeyboardEvent {
 	Uint8 type;
 	Uint8 which;
@@ -638,7 +644,7 @@ typedef struct SDL1_QuitEvent {
 
 typedef union SDL1_Event {
 	Uint8 type;
-	//SDL1_ActiveEvent active;
+	SDL1_ActiveEvent active;
 	SDL1_KeyboardEvent key;
 	SDL1_MouseMotionEvent motion;
 	SDL1_MouseButtonEvent button;
@@ -695,6 +701,17 @@ static SDL1_Event inject_event = { SDL1_NOEVENT };
 static Uint16 lastx = 0;
 static Uint16 lasty = 0;
 
+#define SDL1_APPMOUSEFOCUS 0x01
+#define SDL1_APPINPUTFOCUS 0x02
+#define SDL1_APPACTIVE     0x04
+
+static Uint8 active_map = 0;
+
+static void update_active (SDL1_ActiveEvent *active) {
+	if (active->gain) active_map |= active->state;
+	else active_map &= ~active->state;
+}
+
 int SDLCALL SDL_PollEvent (SDL1_Event *event) {
 	SDL_Event event2;
 	if (inject_event.type != SDL1_NOEVENT) {
@@ -707,6 +724,44 @@ int SDLCALL SDL_PollEvent (SDL1_Event *event) {
 	if (!event) return rSDL_PollEvent(NULL);
 	while (rSDL_PollEvent(&event2)) {
 		switch (event2.type) {
+			case SDL_WINDOWEVENT:
+				event->active.type = SDL1_ACTIVEEVENT;
+				switch (event2.window.event) {
+					case SDL_WINDOWEVENT_MINIMIZED:
+						event->active.gain = 0;
+						event->active.state = SDL1_APPACTIVE;
+						update_active(&event->active);
+						return 1;
+					case SDL_WINDOWEVENT_MAXIMIZED:
+					case SDL_WINDOWEVENT_RESTORED:
+						event->active.gain = 1;
+						event->active.state = SDL1_APPACTIVE;
+						update_active(&event->active);
+						return 1;
+					case SDL_WINDOWEVENT_ENTER:
+						event->active.gain = 1;
+						event->active.state = SDL1_APPMOUSEFOCUS;
+						update_active(&event->active);
+						return 1;
+					case SDL_WINDOWEVENT_LEAVE:
+						event->active.gain = 0;
+						event->active.state = SDL1_APPMOUSEFOCUS;
+						update_active(&event->active);
+						return 1;
+					case SDL_WINDOWEVENT_FOCUS_GAINED:
+						event->active.gain = 1;
+						event->active.state = SDL1_APPINPUTFOCUS;
+						update_active(&event->active);
+						return 1;
+					case SDL_WINDOWEVENT_FOCUS_LOST:
+						event->active.gain = 0;
+						event->active.state = SDL1_APPINPUTFOCUS;
+						update_active(&event->active);
+						return 1;
+					default:
+						break;
+				}
+				break;
 			case SDL_KEYDOWN:
 			case SDL_KEYUP:
 				if (!key_delay && event2.key.repeat) break;
@@ -757,4 +812,12 @@ int SDLCALL SDL_PollEvent (SDL1_Event *event) {
 		}
 	}
 	return 0;
+}
+
+void SDLCALL SDL_PumpEvents (void) {
+	rSDL_PumpEvents();
+}
+
+Uint8 SDLCALL SDL_GetAppState (void) {
+	return active_map;
 }
