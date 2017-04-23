@@ -50,6 +50,10 @@ SDL2_SYMBOL(SDL_MapRGBA, Uint32, (const SDL_PixelFormat *format, Uint8 r, Uint8 
 SDL2_SYMBOL(SDL_ShowCursor, int, (int toggle))
 SDL2_SYMBOL(SDL_WarpMouseInWindow, void, (SDL_Window *window, int x, int y))
 
+SDL2_SYMBOL(SDL_CalculateGammaRamp, void, (float gamma, Uint16 *ramp))
+SDL2_SYMBOL(SDL_GetWindowGammaRamp, int, (SDL_Window *window, Uint16 *red, Uint16 *green, Uint16 *blue))
+SDL2_SYMBOL(SDL_SetWindowGammaRamp, int, (SDL_Window *window, const Uint16 *red, const Uint16 *green, const Uint16 *blue))
+
 SDL2_SYMBOL(SDL_GetWindowGrab, SDL_bool, (SDL_Window *window))
 SDL2_SYMBOL(SDL_SetWindowGrab, void, (SDL_Window *window, SDL_bool grabbed))
 SDL2_SYMBOL(SDL_MinimizeWindow, void, (SDL_Window *window))
@@ -65,6 +69,10 @@ SDL2_SYMBOL(SDL_GL_DeleteContext, void, (SDL_GLContext context))
 /* Audio subsystem */
 SDL2_SYMBOL(SDL_OpenAudio, int, (SDL_AudioSpec *desired, SDL_AudioSpec *obtained))
 SDL2_SYMBOL(SDL_PauseAudio, void, (int pause_on))
+SDL2_SYMBOL(SDL_LockAudio, void, (void))
+SDL2_SYMBOL(SDL_UnlockAudio, void, (void))
+SDL2_SYMBOL(SDL_CloseAudio, void, (void))
+SDL2_SYMBOL(SDL_GetCurrentAudioDriver, const char *, (void))
 
 /* Events subsystem */
 SDL2_SYMBOL(SDL_JoystickEventState, int, (int state))

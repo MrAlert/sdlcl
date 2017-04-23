@@ -95,3 +95,23 @@ int SDLCALL SDL_OpenAudio (SDL1_AudioSpec *desired, SDL1_AudioSpec *obtained) {
 void SDLCALL SDL_PauseAudio (int pause_on) {
 	rSDL_PauseAudio(pause_on);
 }
+
+void SDLCALL SDL_LockAudio (void) {
+	rSDL_LockAudio();
+}
+
+void SDLCALL SDL_UnlockAudio (void) {
+	rSDL_UnlockAudio();
+}
+
+void SDLCALL SDL_CloseAudio (void) {
+	rSDL_CloseAudio();
+}
+
+char *SDLCALL SDL_AudioDriverName (char *namebuf, int maxlen) {
+	const char *name = rSDL_GetCurrentAudioDriver();
+	if (!name) return NULL;
+	strncpy(namebuf, name, maxlen);
+	namebuf[maxlen - 1] = 0;
+	return namebuf;
+}

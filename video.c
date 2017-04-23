@@ -385,11 +385,22 @@ void SDLCALL SDL_WarpMouse (Uint16 x, Uint16 y) {
 	if (main_window) rSDL_WarpMouseInWindow(main_window, x, y);
 }
 
+int SDLCALL SDL_GetGammaRamp (Uint16 *redtable, Uint16 *greentable, Uint16 *bluetable) {
+	if (main_window) return rSDL_GetWindowGammaRamp(main_window, redtable, greentable, bluetable);
+	else return -1;
+}
+
+int SDLCALL SDL_SetGammaRamp (Uint16 *redtable, Uint16 *greentable, Uint16 *bluetable) {
+	if (main_window) return rSDL_SetWindowGammaRamp(main_window, redtable, greentable, bluetable);
+	else return -1;
+}
+
 int SDLCALL SDL_SetGamma (float redgamma, float greengamma, float bluegamma) {
-	(void)redgamma;
-	(void)greengamma;
-	(void)bluegamma;
-	return -1;
+	Uint16 redtable[256], greentable[256], bluetable[256];
+	rSDL_CalculateGammaRamp(redgamma, redtable);
+	rSDL_CalculateGammaRamp(greengamma, greentable);
+	rSDL_CalculateGammaRamp(bluegamma, bluetable);
+	return SDL_SetGammaRamp(redtable, greentable, bluetable);
 }
 
 int SDLCALL SDL_GL_LoadLibrary (const char *path) {
