@@ -2,7 +2,7 @@ CFLAGS = -fPIC -Wall -Wextra -O2 `sdl2-config --cflags` -g -m32
 LDFLAGS = -shared -ldl -m32
 TARGET = libSDL-1.2.so.0
 
-SRCS = main.c video.c audio.c timer.c events.c joystick.c
+SRCS = main.c video.c audio.c timer.c events.c joystick.c rwops.c
 OBJS = $(SRCS:.c=.o)
 HEADERS = redir.h unredir.h
 
