@@ -644,8 +644,57 @@ typedef union SDL1_Event {
 	//SDL1_SysWMEvent syswm;
 } SDL1_Event;
 
+#define SDL1_RELEASED 0
+#define SDL1_PRESSED  1
+
+#define SDL1_BUTTON(X)        (1 << ((X)-1))
+#define SDL1_BUTTON_LEFT      1
+#define SDL1_BUTTON_MIDDLE    2
+#define SDL1_BUTTON_RIGHT     3
+#define SDL1_BUTTON_WHEELUP   4
+#define SDL1_BUTTON_WHEELDOWN 5
+#define SDL1_BUTTON_X1        6
+#define SDL1_BUTTON_X2        7
+#define SDL1_BUTTON_LMASK     SDL1_BUTTON(SDL1_BUTTON_LEFT)
+#define SDL1_BUTTON_MMASK     SDL1_BUTTON(SDL1_BUTTON_MIDDLE)
+#define SDL1_BUTTON_RMASK     SDL1_BUTTON(SDL1_BUTTON_RIGHT)
+#define SDL1_BUTTON_X1MASK    SDL1_BUTTON(SDL1_BUTTON_X1)
+#define SDL1_BUTTON_X2MASK    SDL1_BUTTON(SDL1_BUTTON_X2)
+
+static Uint8 mousebutton2to1 (Uint8 button) {
+	switch (button) {
+		case SDL_BUTTON_LEFT: return SDL1_BUTTON_LEFT;
+		case SDL_BUTTON_MIDDLE: return SDL1_BUTTON_MIDDLE;
+		case SDL_BUTTON_RIGHT: return SDL1_BUTTON_RIGHT;
+		case SDL_BUTTON_X1: return SDL1_BUTTON_X1;
+		case SDL_BUTTON_X2: return SDL1_BUTTON_X2;
+		default: return 0;
+	}
+}
+
+static Uint8 mousestate2to1 (Uint32 state) {
+	Uint8 state1 = 0;
+	if (state & SDL_BUTTON_LMASK) state1 |= SDL1_BUTTON_LMASK;
+	if (state & SDL_BUTTON_MMASK) state1 |= SDL1_BUTTON_MMASK;
+	if (state & SDL_BUTTON_RMASK) state1 |= SDL1_BUTTON_RMASK;
+	if (state & SDL_BUTTON_X1MASK) state1 |= SDL1_BUTTON_X1MASK;
+	if (state & SDL_BUTTON_X2MASK) state1 |= SDL1_BUTTON_X2MASK;
+	return state1;
+}
+
+static SDL1_Event inject_event = { SDL1_NOEVENT };
+static Uint16 lastx = 0;
+static Uint16 lasty = 0;
+
 int SDLCALL SDL_PollEvent (SDL1_Event *event) {
 	SDL_Event event2;
+	if (inject_event.type != SDL1_NOEVENT) {
+		if (event) {
+			*event = inject_event;
+			inject_event.type = SDL1_NOEVENT;
+		}
+		return 1;
+	}
 	if (!event) return rSDL_PollEvent(NULL);
 	while (rSDL_PollEvent(&event2)) {
 		switch (event2.type) {
@@ -659,20 +708,36 @@ int SDLCALL SDL_PollEvent (SDL1_Event *event) {
 			case SDL_MOUSEMOTION:
 				event->motion.type = SDL1_MOUSEMOTION;
 				event->motion.which = 0;
-				event->motion.state = event2.motion.state;
+				event->motion.state = mousestate2to1(event2.motion.state);
 				event->motion.x = event2.motion.x;
 				event->motion.y = event2.motion.y;
 				event->motion.xrel = event2.motion.xrel;
 				event->motion.yrel = event2.motion.yrel;
+				lastx = event2.motion.x;
+				lasty = event2.motion.y;
 				return 1;
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEBUTTONUP:
 				event->button.type = (event2.type == SDL_MOUSEBUTTONDOWN) ? SDL1_MOUSEBUTTONDOWN : SDL1_MOUSEBUTTONUP;
 				event->button.which = 0;
-				event->button.button = event2.button.button;
-				event->button.state = event2.button.state;
+				event->button.button = mousebutton2to1(event2.button.button);
+				event->button.state = (event2.button.state == SDL_PRESSED) ? SDL1_PRESSED : SDL1_RELEASED;
 				event->button.x = event2.button.x;
 				event->button.y = event2.button.y;
+				lastx = event2.button.x;
+				lasty = event2.button.y;
+				return 1;
+			case SDL_MOUSEWHEEL:
+				if (event2.wheel.y == 0) break;
+				event->button.type = SDL1_MOUSEBUTTONDOWN;
+				event->button.which = 0;
+				event->button.button = (event2.wheel.y > 0) ? SDL1_BUTTON_WHEELUP : SDL1_BUTTON_WHEELDOWN;
+				event->button.state = SDL1_PRESSED;
+				event->button.x = lastx;
+				event->button.y = lasty;
+				inject_event.button = event->button;
+				inject_event.button.type = SDL1_MOUSEBUTTONUP;
+				inject_event.button.state = SDL1_RELEASED;
 				return 1;
 			case SDL_QUIT:
 				event->quit.type = SDL1_QUIT;
