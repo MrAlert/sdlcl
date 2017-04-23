@@ -89,6 +89,17 @@ void SDLCALL SDL_Quit (void) {
 	}
 }
 
+Uint32 SDLCALL SDL_WasInit (Uint32 flags) {
+	Uint32 ret2, ret = 0;
+	if (!lib) return 0;
+	ret2 = rSDL_WasInit(initflags1to2(flags));
+	if (ret2 & SDL_INIT_TIMER) ret |= SDL1_INIT_TIMER;
+	if (ret2 & SDL_INIT_AUDIO) ret |= SDL1_INIT_AUDIO;
+	if (ret2 & SDL_INIT_VIDEO) ret |= SDL1_INIT_VIDEO;
+	if (ret2 & SDL_INIT_JOYSTICK) ret |= SDL1_INIT_JOYSTICK;
+	return ret;
+}
+
 #define ERRBUF_SIZE 1024
 char *SDLCALL SDL_GetError (void) {
 	static char errbuf[ERRBUF_SIZE];

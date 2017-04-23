@@ -25,6 +25,7 @@ SDL2_SYMBOL(SDL_InitSubSystem, int, (Uint32 flags))
 SDL2_SYMBOL(SDL_GetError, const char *, (void))
 SDL2_SYMBOL(SDL_QuitSubSystem, void, (Uint32 flags))
 SDL2_SYMBOL(SDL_Quit, void, (void))
+SDL2_SYMBOL(SDL_WasInit, Uint32, (Uint32 flags))
 
 /* Timer subsystem */
 SDL2_SYMBOL(SDL_GetTicks, Uint32, (void))
