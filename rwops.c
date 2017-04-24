@@ -24,38 +24,7 @@
 #include <stdio.h>
 
 #include "SDL2.h"
-
-#define RW1_SEEK_SET 0
-#define RW1_SEEK_CUR 1
-#define RW1_SEEK_END 2
-
-#define SDL1_RWseek(ctx, offset, whence) (ctx)->seek(ctx, offset, whence)
-#define SDL1_RWtell(ctx)                 (ctx)->seek(ctx, 0, RW1_SEEK_CUR)
-#define SDL1_RWread(ctx, ptr, size, n)   (ctx)->read(ctx, ptr, size, n)
-#define SDL1_RWwrite(ctx, ptr, size, n)  (ctx)->write(ctx, ptr, size, n)
-#define SDL1_RWclose(ctx)                (ctx)->close(ctx)
-
-typedef struct SDL1_RWops {
-	int (SDLCALL *seek)(struct SDL1_RWops *context, int offset, int whence);
-	int (SDLCALL *read)(struct SDL1_RWops *context, void *ptr, int size, int maxnum);
-	int (SDLCALL *write)(struct SDL1_RWops *context, const void *ptr, int size, int num);
-	int (SDLCALL *close)(struct SDL1_RWops *context);
-	Uint32 type;
-	union {
-		struct {
-			int autoclose;
-			FILE *fp;
-		} stdio;
-		struct {
-			Uint8 *base;
-			Uint8 *here;
-			Uint8 *stop;
-		} mem;
-		struct {
-			void *data1;
-		} unknown;
-	} hidden;
-} SDL1_RWops;
+#include "rwops.h"
 
 SDL1_RWops *SDLCALL SDL_AllocRW (void) {
 	return malloc(sizeof(SDL1_RWops));
@@ -221,6 +190,49 @@ SDL1_RWops *SDLCALL SDL_RWFromConstMem (const void *mem, int size) {
 		rwops->hidden.mem.stop = rwops->hidden.mem.base + size;
 	}
 	return rwops;
+}
+
+static Sint64 SDLCALL sdl1_size (SDL_RWops *context) {
+	(void)context;
+	return -1;
+}
+
+static Sint64 SDLCALL sdl1_seek (SDL_RWops *context, Sint64 offset, int whence) {
+	SDL1_RWops *rwops = context->hidden.unknown.data1;
+	return rwops->seek(rwops, offset, whence);
+}
+
+static size_t SDLCALL sdl1_read (SDL_RWops *context, void *ptr, size_t size, size_t maxnum) {
+	SDL1_RWops *rwops = context->hidden.unknown.data1;
+	return rwops->read(rwops, ptr, size, maxnum);
+}
+
+static size_t SDLCALL sdl1_write (SDL_RWops *context, const void *ptr, size_t size, size_t num) {
+	SDL1_RWops *rwops = context->hidden.unknown.data1;
+	return rwops->write(rwops, ptr, size, num);
+}
+
+static int sdl1_close (SDL_RWops *context) {
+	SDL1_RWops *rwops = context->hidden.unknown.data1;
+	int ret = rwops->close(rwops);
+	rSDL_FreeRW(context);
+	return ret;
+}
+
+__attribute__ ((visibility ("hidden"))) SDL_RWops *SDLCALL SDLCL_RWFromSDL1 (SDL1_RWops *rwops) {
+	SDL_RWops *rwops2;
+	if (!rwops) return NULL;
+	rwops2 = rSDL_AllocRW();
+	if (rwops2) {
+		rwops2->size = sdl1_size;
+		rwops2->seek = sdl1_seek;
+		rwops2->read = sdl1_read;
+		rwops2->write = sdl1_write;
+		rwops2->close = sdl1_close;
+		rwops2->type = SDL_RWOPS_UNKNOWN;
+		rwops2->hidden.unknown.data1 = rwops;
+	}
+	return rwops2;
 }
 
 #define ReadBits(E,B) \

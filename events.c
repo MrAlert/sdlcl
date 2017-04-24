@@ -814,6 +814,20 @@ int SDLCALL SDL_PollEvent (SDL1_Event *event) {
 	return 0;
 }
 
+typedef enum {
+	SDL1_ADDEVENT,
+	SDL1_PEEKEVENT,
+	SDL1_GETEVENT
+} SDL1_eventaction;
+
+int SDLCALL SDL_PeepEvents (SDL1_Event *events, int numevents, SDL1_eventaction action, Uint32 mask) {
+	(void)events;
+	(void)numevents;
+	(void)action;
+	(void)mask;
+	return 0;
+}
+
 void SDLCALL SDL_PumpEvents (void) {
 	rSDL_PumpEvents();
 }

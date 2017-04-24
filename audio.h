@@ -20,15 +20,24 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef SDLCL_SDL2_H
-#define SDLCL_SDL2_H
+#ifndef SDLCL_AUDIO_H
+#define SDLCL_AUDIO_H
 
-#include "redir.h"
-#include "SDL.h"
-#include "unredir.h"
+#define AUDIO1_U8     0x0008
+#define AUDIO1_S8     0x8008
+#define AUDIO1_U16LSB 0x0010
+#define AUDIO1_S16LSB 0x8010
+#define AUDIO1_U16MSB 0x1010
+#define AUDIO1_S16MSB 0x9010
+#define AUDIO1_U16    AUDIO1_U16LSB
+#define AUDIO1_S16    AUDIO1_S16LSB
 
-#define SDL2_SYMBOL(name, ret, param) extern ret (SDLCALL *r##name) param;
-#include "symbols.x"
-#undef SDL2_SYMBOL
+#if SDL_BYTEORDER == SDL_LIL_ENDIAN
+#define AUDIO1_U16SYS  AUDIO1_U16LSB
+#define AUDIO1_S16SYS  AUDIO1_S16LSB
+#else
+#define AUDIO1_U16SYS  AUDIO1_U16MSB
+#define AUDIO1_S16SYS  AUDIO1_S16MSB
+#endif
 
 #endif

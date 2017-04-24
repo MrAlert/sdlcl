@@ -216,8 +216,6 @@ SDL1_VideoInfo *SDLCALL SDL_GetVideoInfo (void) {
 
 static Uint32 vidflags1to2 (Uint32 flags) {
 	Uint32 flags2 = 0;
-	/* No hardware surfaces */
-	if (flags & SDL1_HWSURFACE) return SDL_WINDOW_INVALID;
 	/* No OPENGLBLIT support */
 	if (flags & SDL1_OPENGLBLIT & ~SDL1_OPENGL) return SDL_WINDOW_INVALID;
 	if (flags & SDL1_FULLSCREEN) flags2 |= SDL_WINDOW_FULLSCREEN;

@@ -74,10 +74,16 @@ SDL2_SYMBOL(SDL_UnlockAudio, void, (void))
 SDL2_SYMBOL(SDL_CloseAudio, void, (void))
 SDL2_SYMBOL(SDL_GetCurrentAudioDriver, const char *, (void))
 
+SDL2_SYMBOL(SDL_BuildAudioCVT, int, (SDL_AudioCVT *cvt, SDL_AudioFormat src_format, Uint8 src_channels, int src_rate, SDL_AudioFormat dst_format, Uint8 dst_channels, int dst_rate))
+SDL2_SYMBOL(SDL_ConvertAudio, int, (SDL_AudioCVT *cvt))
+SDL2_SYMBOL(SDL_LoadWAV_RW, SDL_AudioSpec *, (SDL_RWops* src, int freesrc, SDL_AudioSpec *spec, Uint8 **audio_buf, Uint32 *audio_len))
+SDL2_SYMBOL(SDL_FreeWAV, void, (Uint8 *audio_buf))
+
 /* Events subsystem */
 SDL2_SYMBOL(SDL_JoystickEventState, int, (int state))
 SDL2_SYMBOL(SDL_GetModState, SDL_Keymod, (void))
 SDL2_SYMBOL(SDL_PollEvent, int, (SDL_Event *event))
+SDL2_SYMBOL(SDL_PeepEvents, int, (SDL_Event *events, int numevents, SDL_eventaction action, Uint32 minType, Uint32 maxType))
 SDL2_SYMBOL(SDL_PumpEvents, void, (void))
 
 /* Joystick subsystem */
@@ -87,7 +93,11 @@ SDL2_SYMBOL(SDL_JoystickName, const char *, (SDL_Joystick *joystick))
 SDL2_SYMBOL(SDL_JoystickNameForIndex, const char *, (int index))
 SDL2_SYMBOL(SDL_JoystickNumButtons, int, (SDL_Joystick *joystick))
 SDL2_SYMBOL(SDL_JoystickNumAxes, int, (SDL_Joystick *joystick))
+SDL2_SYMBOL(SDL_JoystickNumHats, int, (SDL_Joystick *joystick))
 SDL2_SYMBOL(SDL_JoystickGetAxis, Sint16, (SDL_Joystick *joystick, int axis))
+SDL2_SYMBOL(SDL_JoystickGetButton, Uint8, (SDL_Joystick *joystick, int button))
+SDL2_SYMBOL(SDL_JoystickGetHat, Uint8, (SDL_Joystick *joystick, int hat))
+SDL2_SYMBOL(SDL_JoystickUpdate, void, (void))
 SDL2_SYMBOL(SDL_JoystickClose, void, (SDL_Joystick *joystick))
 
 /* RWops */

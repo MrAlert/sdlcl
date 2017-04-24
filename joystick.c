@@ -34,16 +34,32 @@ const char *SDLCALL SDL_JoystickName (int index) {
 	return rSDL_JoystickNameForIndex(index);
 }
 
-int SDLCALL SDL_JoystickNumButtons (SDL_Joystick *joystick) {
-	return rSDL_JoystickNumButtons(joystick);
-}
-
 int SDLCALL SDL_JoystickNumAxes (SDL_Joystick *joystick) {
 	return rSDL_JoystickNumAxes(joystick);
 }
 
+int SDLCALL SDL_JoystickNumButtons (SDL_Joystick *joystick) {
+	return rSDL_JoystickNumButtons(joystick);
+}
+
+int SDLCALL SDL_JoystickNumHats (SDL_Joystick *joystick) {
+	return rSDL_JoystickNumHats(joystick);
+}
+
 Sint16 SDLCALL SDL_JoystickGetAxis (SDL_Joystick *joystick, int axis) {
 	return rSDL_JoystickGetAxis(joystick, axis);
+}
+
+Uint8 SDLCALL SDL_JoystickGetButton (SDL_Joystick *joystick, int button) {
+	return rSDL_JoystickGetButton(joystick, button);
+}
+
+Uint8 SDLCALL SDL_JoystickGetHat (SDL_Joystick *joystick, int hat) {
+	return rSDL_JoystickGetHat(joystick, hat);
+}
+
+void SDLCALL SDL_JoystickUpdate (void) {
+	rSDL_JoystickUpdate();
 }
 
 void SDLCALL SDL_JoystickClose (SDL_Joystick *joystick) {

@@ -25,6 +25,8 @@
 #include <stdio.h>
 
 #include "SDL2.h"
+#include "audio.h"
+#include "rwops.h"
 
 typedef struct SDL1_AudioSpec {
 	int freq;
@@ -37,15 +39,6 @@ typedef struct SDL1_AudioSpec {
 	void (SDLCALL *callback)(void *userdata, Uint8 *stream, int len);
 	void *userdata;
 } SDL1_AudioSpec;
-
-#define AUDIO1_U8     0x0008
-#define AUDIO1_S8     0x8008
-#define AUDIO1_U16LSB 0x0010
-#define AUDIO1_S16LSB 0x8010
-#define AUDIO1_U16MSB 0x1010
-#define AUDIO1_S16MSB 0x9010
-#define AUDIO1_U16    AUDIO1_U16LSB
-#define AUDIO1_S16    AUDIO1_S16LSB
 
 typedef struct callback_data {
 	void (SDLCALL *callback)(void *userdata, Uint8 *stream, int len);
@@ -114,4 +107,29 @@ char *SDLCALL SDL_AudioDriverName (char *namebuf, int maxlen) {
 	strncpy(namebuf, name, maxlen);
 	namebuf[maxlen - 1] = 0;
 	return namebuf;
+}
+
+SDL1_AudioSpec *SDLCALL SDL_LoadWAV_RW (SDL1_RWops *src, int freesrc, SDL1_AudioSpec *spec, Uint8 **audio_buf, Uint32 *audio_len) {
+	SDL_AudioSpec spec2, *ret;
+	SDL_RWops *src2 = SDLCL_RWFromSDL1(src);
+	if (!src2) {
+		if (freesrc && src) SDL1_RWclose(src);
+		return NULL;
+	}
+	ret = rSDL_LoadWAV_RW(src2, freesrc, &spec2, audio_buf, audio_len);
+	if (!freesrc) rSDL_FreeRW(src2);
+	if (ret) {
+		spec->freq = spec2.freq;
+		spec->format = spec2.format;
+		spec->channels = spec2.channels;
+		spec->samples = spec2.samples;
+		spec->size = spec2.size;
+		spec->silence = spec2.silence;
+		return spec;
+	}
+	return NULL;
+}
+
+void SDLCALL SDL_FreeWAV(Uint8 *audio_buf) {
+	rSDL_FreeWAV(audio_buf);
 }
