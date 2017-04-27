@@ -145,3 +145,27 @@ SDL2_SYMBOL(SDL_WriteLE32, size_t, (SDL_RWops *src, Uint32 value))
 SDL2_SYMBOL(SDL_WriteBE32, size_t, (SDL_RWops *src, Uint32 value))
 SDL2_SYMBOL(SDL_WriteLE64, size_t, (SDL_RWops *src, Uint64 value))
 SDL2_SYMBOL(SDL_WriteBE64, size_t, (SDL_RWops *src, Uint64 value))
+
+/* Threading */
+SDL2_SYMBOL(SDL_CreateThread, SDL_Thread *, (SDL_ThreadFunction fn, const char *name, void *data))
+SDL2_SYMBOL(SDL_WaitThread, void, (SDL_Thread *thread, int *status))
+
+SDL2_SYMBOL(SDL_CreateMutex, SDL_mutex *, (void))
+SDL2_SYMBOL(SDL_LockMutex, int, (SDL_mutex *mutex))
+SDL2_SYMBOL(SDL_UnlockMutex, int, (SDL_mutex *mutex))
+SDL2_SYMBOL(SDL_DestroyMutex, void, (SDL_mutex *mutex))
+
+SDL2_SYMBOL(SDL_CreateSemaphore, SDL_sem *, (Uint32 initial_value))
+SDL2_SYMBOL(SDL_SemWait, int, (SDL_sem *sem))
+SDL2_SYMBOL(SDL_SemTryWait, int, (SDL_sem *sem))
+SDL2_SYMBOL(SDL_SemWaitTimeout, int, (SDL_sem *sem, Uint32 ms))
+SDL2_SYMBOL(SDL_SemPost, int, (SDL_sem *sem))
+SDL2_SYMBOL(SDL_SemValue, Uint32, (SDL_sem *sem))
+SDL2_SYMBOL(SDL_DestroySemaphore, void, (SDL_sem *sem))
+
+SDL2_SYMBOL(SDL_CreateCond, SDL_cond *, (void))
+SDL2_SYMBOL(SDL_CondSignal, int, (SDL_cond *cond))
+SDL2_SYMBOL(SDL_CondBroadcast, int, (SDL_cond *cond))
+SDL2_SYMBOL(SDL_CondWait, int, (SDL_cond *cond, SDL_mutex *mutex))
+SDL2_SYMBOL(SDL_CondWaitTimeout, int, (SDL_cond *cond, SDL_mutex *mutex, Uint32 ms))
+SDL2_SYMBOL(SDL_DestroyCond, int, (SDL_cond *cond))
