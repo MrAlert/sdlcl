@@ -697,6 +697,10 @@ static Uint8 mousestate2to1 (Uint32 state) {
 	return state1;
 }
 
+Uint8 SDLCALL SDL_GetMouseState (int *x, int *y) {
+    return mousestate2to1(rSDL_GetMouseState(x, y));
+}
+
 static SDL1_Event inject_event = { SDL1_NOEVENT };
 static Uint16 lastx = 0;
 static Uint16 lasty = 0;

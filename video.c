@@ -288,19 +288,46 @@ SDL1_Surface *SDLCALL SDL_LoadBMP_RW(SDL1_RWops *src, int freesrc) {
 	return surface;
 }
 
+static Uint32 map_component (Uint8 v, Uint8 loss, Uint8 shift, Uint32 mask) {
+	return (((Uint32)v >> loss) << shift) & mask;
+}
+
 Uint32 SDLCALL SDL_MapRGBA (SDL1_PixelFormat *fmt, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
-	Uint32 color = 0;
+	Uint32 color;
 	/* TODO: Map palette formats */
 	if (fmt->palette) return 0;
-	color |= (((Uint32)r >> fmt->Rloss) << fmt->Rshift) & fmt->Rmask;
-	color |= (((Uint32)g >> fmt->Gloss) << fmt->Gshift) & fmt->Gmask;
-	color |= (((Uint32)b >> fmt->Bloss) << fmt->Bshift) & fmt->Bmask;
-	color |= (((Uint32)a >> fmt->Aloss) << fmt->Ashift) & fmt->Amask;
+	color = map_component(r, fmt->Rloss, fmt->Rshift, fmt->Rmask);
+	color |= map_component(g, fmt->Gloss, fmt->Gshift, fmt->Gmask);
+	color |= map_component(b, fmt->Bloss, fmt->Bshift, fmt->Bmask);
+	color |= map_component(a, fmt->Aloss, fmt->Ashift, fmt->Amask);
 	return color;
 }
 
 Uint32 SDLCALL SDL_MapRGB (SDL1_PixelFormat *fmt, Uint8 r, Uint8 g, Uint8 b) {
 	return SDL_MapRGBA(fmt, r, g, b, 255);
+}
+
+static Uint8 get_component (Uint32 pixel, Uint8 loss, Uint8 shift, Uint32 mask) {
+	Uint8 v = ((pixel & mask) >> shift) << loss;
+	int s = 8 - loss;
+	while (s < 8) {
+		v |= v >> s;
+		s *= 2;
+	}
+	return v;
+}
+
+void SDLCALL SDL_GetRGBA (Uint32 pixel, SDL1_PixelFormat *fmt, Uint8 *r, Uint8 *g, Uint8 *b, Uint8 *a) {
+	*r = get_component(pixel, fmt->Rloss, fmt->Rshift, fmt->Rmask);
+	*g = get_component(pixel, fmt->Gloss, fmt->Gshift, fmt->Gmask);
+	*b = get_component(pixel, fmt->Bloss, fmt->Bshift, fmt->Bmask);
+	if (fmt->Amask) *a = get_component(pixel, fmt->Aloss, fmt->Ashift, fmt->Amask);
+	else *a = 255;
+}
+
+void SDLCALL SDL_GetRGB (Uint32 pixel, SDL1_PixelFormat *fmt, Uint8 *r, Uint8 *g, Uint8 *b) {
+	Uint8 a;
+	SDL_GetRGBA(pixel, fmt, r, g, b, &a);
 }
 
 typedef struct SDL1_VideoInfo {
@@ -485,9 +512,9 @@ static void update_grab (void) {
 }
 
 SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp, Uint32 flags) {
+	Uint32 Rmask, Gmask, Bmask, Amask;
 	Uint32 pixfmt = SDL_PIXELFORMAT_RGBX8888;
 	Uint32 flags2 = vidflags1to2(flags);
-	SDL_Surface *main_surface2;
 	(void)width;
 	(void)height;
 	(void)bpp;
@@ -502,6 +529,7 @@ SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp, Uint32 f
 			default: return NULL;
 		}
 	}
+	rSDL_PixelFormatEnumToMasks(pixfmt, &bpp, &Rmask, &Gmask, &Bmask, &Amask);
 	close_window();
 	if (flags & SDL1_OPENGL) {
 		/* Use compatibility profile for OpenGL */
@@ -531,14 +559,8 @@ SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp, Uint32 f
 		}
 		rSDL_SetTextureBlendMode(main_texture, SDL_BLENDMODE_NONE);
 	}
-	main_surface2 = rSDL_CreateRGBSurfaceWithFormat(0, width, height, bpp, pixfmt);
-	if (!main_surface2) {
-		close_window();
-		return NULL;
-	}
-	main_surface = SDLCL_CreateSurfaceFromSDL2(main_surface2);
+	main_surface = SDL_CreateRGBSurface(0, width, height, bpp, Rmask, Gmask, Bmask, Amask);
 	if (!main_surface) {
-		rSDL_FreeSurface(main_surface2);
 		close_window();
 		return NULL;
 	}
