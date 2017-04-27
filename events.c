@@ -839,3 +839,8 @@ void SDLCALL SDL_PumpEvents (void) {
 Uint8 SDLCALL SDL_GetAppState (void) {
 	return active_map;
 }
+
+int SDLCALL SDL_PushEvent(SDL1_Event *event) {
+	(void)event;
+	return 0;
+}

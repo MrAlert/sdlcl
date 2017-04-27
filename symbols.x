@@ -107,6 +107,7 @@ SDL2_SYMBOL(SDL_GetMouseState, Uint8, (int *x, int *y))
 SDL2_SYMBOL(SDL_PollEvent, int, (SDL_Event *event))
 SDL2_SYMBOL(SDL_PeepEvents, int, (SDL_Event *events, int numevents, SDL_eventaction action, Uint32 minType, Uint32 maxType))
 SDL2_SYMBOL(SDL_PumpEvents, void, (void))
+SDL2_SYMBOL(SDL_PushEvent, int, (SDL_Event * event))
 
 /* Joystick subsystem */
 SDL2_SYMBOL(SDL_NumJoysticks, int, (void))
@@ -169,3 +170,11 @@ SDL2_SYMBOL(SDL_CondBroadcast, int, (SDL_cond *cond))
 SDL2_SYMBOL(SDL_CondWait, int, (SDL_cond *cond, SDL_mutex *mutex))
 SDL2_SYMBOL(SDL_CondWaitTimeout, int, (SDL_cond *cond, SDL_mutex *mutex, Uint32 ms))
 SDL2_SYMBOL(SDL_DestroyCond, int, (SDL_cond *cond))
+
+/* CPU capabilities */
+SDL2_SYMBOL(SDL_Has3DNow, SDL_bool, (void))
+SDL2_SYMBOL(SDL_HasAltiVec, SDL_bool, (void))
+SDL2_SYMBOL(SDL_HasMMX, SDL_bool, (void))
+SDL2_SYMBOL(SDL_HasRDTSC, SDL_bool, (void))
+SDL2_SYMBOL(SDL_HasSSE, SDL_bool, (void))
+SDL2_SYMBOL(SDL_HasSSE2, SDL_bool, (void))
