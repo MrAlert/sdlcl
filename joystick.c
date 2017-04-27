@@ -38,6 +38,10 @@ int SDLCALL SDL_JoystickNumAxes (SDL_Joystick *joystick) {
 	return rSDL_JoystickNumAxes(joystick);
 }
 
+int SDLCALL SDL_JoystickNumBalls (SDL_Joystick *joystick) {
+	return rSDL_JoystickNumBalls(joystick);
+}
+
 int SDLCALL SDL_JoystickNumButtons (SDL_Joystick *joystick) {
 	return rSDL_JoystickNumButtons(joystick);
 }
@@ -48,6 +52,10 @@ int SDLCALL SDL_JoystickNumHats (SDL_Joystick *joystick) {
 
 Sint16 SDLCALL SDL_JoystickGetAxis (SDL_Joystick *joystick, int axis) {
 	return rSDL_JoystickGetAxis(joystick, axis);
+}
+
+int SDLCALL SDL_JoystickGetBall (SDL_Joystick *joystick, int ball, int *dx, int *dy) {
+	return rSDL_JoystickGetBall(joystick, ball, dx, dy);
 }
 
 Uint8 SDLCALL SDL_JoystickGetButton (SDL_Joystick *joystick, int button) {
