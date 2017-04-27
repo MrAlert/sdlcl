@@ -38,7 +38,8 @@ extern DECLSPEC SDL_bool SDLCALL SDL_HasMMX(void)
 
 extern DECLSPEC SDL_bool SDLCALL SDL_HasMMXExt(void)
 {
-	return rSDL_HasMMXExt();
+	// Dirty hack. Won't detect non-SSE, MMX-Extended AMDs.
+	return rSDL_HasMMX() && rSDL_HasSSE();
 }
 
 extern DECLSPEC SDL_bool SDLCALL SDL_Has3DNow(void)
@@ -48,7 +49,8 @@ extern DECLSPEC SDL_bool SDLCALL SDL_Has3DNow(void)
 
 extern DECLSPEC SDL_bool SDLCALL SDL_Has3DNowExt(void)
 {
-	return rSDL_Has3DNowExt();
+	//TODO: implement?
+	return SDL_FALSE;
 }
 
 extern DECLSPEC SDL_bool SDLCALL SDL_HasSSE(void)

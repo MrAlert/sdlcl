@@ -144,10 +144,8 @@ SDL2_SYMBOL(SDL_WriteBE64, size_t, (SDL_RWops *src, Uint64 value))
 
 /* CPU capabilities */
 SDL2_SYMBOL(SDL_Has3DNow, SDL_bool, (void))
-SDL2_SYMBOL(SDL_Has3DNowExt, SDL_bool, (void))
 SDL2_SYMBOL(SDL_HasAltiVec, SDL_bool, (void))
 SDL2_SYMBOL(SDL_HasMMX, SDL_bool, (void))
-SDL2_SYMBOL(SDL_HasMMXExt, SDL_bool, (void))
 SDL2_SYMBOL(SDL_HasRDTSC, SDL_bool, (void))
 SDL2_SYMBOL(SDL_HasSSE, SDL_bool, (void))
 SDL2_SYMBOL(SDL_HasSSE2, SDL_bool, (void))
