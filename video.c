@@ -603,6 +603,14 @@ void SDL_UpdateRect (SDL1_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 
 	SDL_Flip(screen);
 }
 
+/* TODO: Implement partial screen updates? */
+void SDLCALL SDL_UpdateRects(SDL1_Surface *screen, int numrects, SDL1_Rect *rects)
+{
+	(void)numrects;
+	(void)rects;
+	SDL_Flip(screen);
+}
+
 int SDLCALL SDL_ShowCursor (int toggle) {
 	int ret = rSDL_ShowCursor(toggle);
 	update_grab();
