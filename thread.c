@@ -116,3 +116,8 @@ int SDLCALL SDL_CondWaitTimeout (SDL_cond *cond, SDL_mutex *mutex, Uint32 ms) {
 void SDL_DestroyCond (SDL_cond *cond) {
 	rSDL_DestroyCond(cond);
 }
+
+Uint32 SDLCALL SDL_ThreadID(void) {
+	// TODO: implement a way to work around 64-bit SDL_ThreadID
+	return (Uint32)rSDL_ThreadID();
+}

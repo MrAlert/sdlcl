@@ -170,6 +170,7 @@ SDL2_SYMBOL(SDL_CondBroadcast, int, (SDL_cond *cond))
 SDL2_SYMBOL(SDL_CondWait, int, (SDL_cond *cond, SDL_mutex *mutex))
 SDL2_SYMBOL(SDL_CondWaitTimeout, int, (SDL_cond *cond, SDL_mutex *mutex, Uint32 ms))
 SDL2_SYMBOL(SDL_DestroyCond, int, (SDL_cond *cond))
+SDL2_SYMBOL(SDL_ThreadID, SDL_threadID, (void))
 
 /* CPU capabilities */
 SDL2_SYMBOL(SDL_Has3DNow, SDL_bool, (void))
