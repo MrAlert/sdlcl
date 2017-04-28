@@ -150,6 +150,8 @@ SDL2_SYMBOL(SDL_WriteBE64, size_t, (SDL_RWops *src, Uint64 value))
 /* Threading */
 SDL2_SYMBOL(SDL_CreateThread, SDL_Thread *, (SDL_ThreadFunction fn, const char *name, void *data))
 SDL2_SYMBOL(SDL_WaitThread, void, (SDL_Thread *thread, int *status))
+SDL2_SYMBOL(SDL_ThreadID, SDL_threadID, (void))
+SDL2_SYMBOL(SDL_GetThreadID, SDL_threadID, (SDL_Thread *thread))
 
 SDL2_SYMBOL(SDL_CreateMutex, SDL_mutex *, (void))
 SDL2_SYMBOL(SDL_LockMutex, int, (SDL_mutex *mutex))
@@ -170,7 +172,6 @@ SDL2_SYMBOL(SDL_CondBroadcast, int, (SDL_cond *cond))
 SDL2_SYMBOL(SDL_CondWait, int, (SDL_cond *cond, SDL_mutex *mutex))
 SDL2_SYMBOL(SDL_CondWaitTimeout, int, (SDL_cond *cond, SDL_mutex *mutex, Uint32 ms))
 SDL2_SYMBOL(SDL_DestroyCond, int, (SDL_cond *cond))
-SDL2_SYMBOL(SDL_ThreadID, SDL_threadID, (void))
 
 /* CPU capabilities */
 SDL2_SYMBOL(SDL_Has3DNow, SDL_bool, (void))

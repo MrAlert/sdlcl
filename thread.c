@@ -37,6 +37,15 @@ void SDLCALL SDL_KillThread (SDL_Thread *thread) {
 	abort();
 }
 
+/* TODO: implement a way to work around 64-bit SDL_ThreadID */
+Uint32 SDLCALL SDL_ThreadID (void) {
+	return (Uint32)rSDL_ThreadID();
+}
+
+Uint32 SDLCALL SDL_GetThreadID (SDL_Thread *thread) {
+	return (Uint32)rSDL_GetThreadID(thread);
+}
+
 /* Undefine SDL 2.0 mutex macros */
 #undef SDL_mutexP
 #undef SDL_mutexV
@@ -113,11 +122,6 @@ int SDLCALL SDL_CondWaitTimeout (SDL_cond *cond, SDL_mutex *mutex, Uint32 ms) {
 	else return ret;
 }
 
-void SDL_DestroyCond (SDL_cond *cond) {
+void SDLCALL SDL_DestroyCond (SDL_cond *cond) {
 	rSDL_DestroyCond(cond);
-}
-
-Uint32 SDLCALL SDL_ThreadID(void) {
-	// TODO: implement a way to work around 64-bit SDL_ThreadID
-	return (Uint32)rSDL_ThreadID();
 }
