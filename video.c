@@ -340,8 +340,8 @@ static Uint8 get_component (Uint32 pixel, Uint8 loss, Uint8 shift, Uint32 mask) 
 void SDLCALL SDL_GetRGBA (Uint32 pixel, SDL1_PixelFormat *fmt, Uint8 *r, Uint8 *g, Uint8 *b, Uint8 *a) {
 	if (fmt->palette) {
 		*r = fmt->palette->colors[pixel].r;
-		*g = fmt->palette->colors[pixel].r;
-		*b = fmt->palette->colors[pixel].r;
+		*g = fmt->palette->colors[pixel].g;
+		*b = fmt->palette->colors[pixel].b;
 		*a = 255;
 	} else {
 		*r = get_component(pixel, fmt->Rloss, fmt->Rshift, fmt->Rmask);
