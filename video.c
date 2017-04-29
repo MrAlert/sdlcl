@@ -574,6 +574,31 @@ SDL1_Surface *SDLCALL SDL_GetVideoSurface (void) {
 	return main_surface;
 }
 
+#define SDL1_LOGPAL  0x01
+#define SDL1_PHYSPAL 0x02
+
+int SDLCALL SDL_SetPalette (SDL1_Surface *surface, int flags, SDL1_Color *colors, int firstcolor, int ncolors) {
+	SDL_Color colors2[256];
+	int i;
+	if (ncolors > 256) return 0;
+	if (flags & SDL1_LOGPAL) {
+		for (i = 0; i < ncolors; i++) {
+			colors2[i].r = colors[i].r;
+			colors2[i].g = colors[i].g;
+			colors2[i].b = colors[i].b;
+			colors2[i].a = 255;
+		}
+		if (rSDL_SetPaletteColors(surface->sdl2_surface->format->palette, colors2, firstcolor, ncolors)) return 0;
+		memcpy(surface->format->palette->colors + firstcolor, colors, ncolors * sizeof(SDL1_Color));
+	}
+	/* TODO: Implement physical palette manipulation */
+	return 1;
+}
+
+int SDLCALL SDL_SetColors (SDL1_Surface *surface, SDL1_Color *colors, int firstcolor, int ncolors) {
+	return SDL_SetPalette(surface, SDL1_LOGPAL | SDL1_PHYSPAL, colors, firstcolor, ncolors);
+}
+
 int SDLCALL SDL_Flip (SDL1_Surface *screen) {
 	void *texpix;
 	int texpitch, i;

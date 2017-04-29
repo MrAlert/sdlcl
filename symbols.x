@@ -56,6 +56,8 @@ SDL2_SYMBOL(SDL_MapRGB, Uint32, (const SDL_PixelFormat *format, Uint8 r, Uint8 g
 SDL2_SYMBOL(SDL_GetRGBA, void, (Uint32 pixel, const SDL_PixelFormat *format, Uint8 *r, Uint8 *g, Uint8 *b, Uint8 *a))
 SDL2_SYMBOL(SDL_GetRGB, void, (Uint32 pixel, const SDL_PixelFormat *format, Uint8 *r, Uint8 *g, Uint8 *b))
 
+SDL2_SYMBOL(SDL_SetPaletteColors, int, (SDL_Palette *palette, const SDL_Color *colors, int firstcolor, int ncolors))
+
 SDL2_SYMBOL(SDL_ShowCursor, int, (int toggle))
 SDL2_SYMBOL(SDL_WarpMouseInWindow, void, (SDL_Window *window, int x, int y))
 
