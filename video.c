@@ -297,14 +297,30 @@ static Uint32 map_component (Uint8 v, Uint8 loss, Uint8 shift, Uint32 mask) {
 }
 
 Uint32 SDLCALL SDL_MapRGBA (SDL1_PixelFormat *fmt, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
+	int i, dist, min, rd, gd, bd;
 	Uint32 color;
-	/* TODO: Map palette formats */
-	if (fmt->palette) return 0;
-	color = map_component(r, fmt->Rloss, fmt->Rshift, fmt->Rmask);
-	color |= map_component(g, fmt->Gloss, fmt->Gshift, fmt->Gmask);
-	color |= map_component(b, fmt->Bloss, fmt->Bshift, fmt->Bmask);
-	color |= map_component(a, fmt->Aloss, fmt->Ashift, fmt->Amask);
-	return color;
+	if (fmt->palette) {
+		min = (256 * 256) * 3;
+		color = 0;
+		for (i = 0; i < fmt->palette->ncolors; i++) {
+			rd = fmt->palette->colors[i].r - r;
+			gd = fmt->palette->colors[i].g - g;
+			bd = fmt->palette->colors[i].b - b;
+			dist = (rd * rd) + (gd * gd) + (bd * bd);
+			if (dist < min) {
+				color = i;
+				if (dist == 0) break;
+				min = dist;
+			}
+		}
+		return color;
+	} else {
+		color = map_component(r, fmt->Rloss, fmt->Rshift, fmt->Rmask);
+		color |= map_component(g, fmt->Gloss, fmt->Gshift, fmt->Gmask);
+		color |= map_component(b, fmt->Bloss, fmt->Bshift, fmt->Bmask);
+		color |= map_component(a, fmt->Aloss, fmt->Ashift, fmt->Amask);
+		return color;
+	}
 }
 
 Uint32 SDLCALL SDL_MapRGB (SDL1_PixelFormat *fmt, Uint8 r, Uint8 g, Uint8 b) {
@@ -322,11 +338,18 @@ static Uint8 get_component (Uint32 pixel, Uint8 loss, Uint8 shift, Uint32 mask) 
 }
 
 void SDLCALL SDL_GetRGBA (Uint32 pixel, SDL1_PixelFormat *fmt, Uint8 *r, Uint8 *g, Uint8 *b, Uint8 *a) {
-	*r = get_component(pixel, fmt->Rloss, fmt->Rshift, fmt->Rmask);
-	*g = get_component(pixel, fmt->Gloss, fmt->Gshift, fmt->Gmask);
-	*b = get_component(pixel, fmt->Bloss, fmt->Bshift, fmt->Bmask);
-	if (fmt->Amask) *a = get_component(pixel, fmt->Aloss, fmt->Ashift, fmt->Amask);
-	else *a = 255;
+	if (fmt->palette) {
+		*r = fmt->palette->colors[pixel].r;
+		*g = fmt->palette->colors[pixel].r;
+		*b = fmt->palette->colors[pixel].r;
+		*a = 255;
+	} else {
+		*r = get_component(pixel, fmt->Rloss, fmt->Rshift, fmt->Rmask);
+		*g = get_component(pixel, fmt->Gloss, fmt->Gshift, fmt->Gmask);
+		*b = get_component(pixel, fmt->Bloss, fmt->Bshift, fmt->Bmask);
+		if (fmt->Amask) *a = get_component(pixel, fmt->Aloss, fmt->Ashift, fmt->Amask);
+		else *a = 255;
+	}
 }
 
 void SDLCALL SDL_GetRGB (Uint32 pixel, SDL1_PixelFormat *fmt, Uint8 *r, Uint8 *g, Uint8 *b) {
