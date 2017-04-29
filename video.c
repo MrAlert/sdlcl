@@ -131,6 +131,17 @@ static Uint8 masktoshift (Uint32 mask) {
 	return shift;
 }
 
+static void process_masks (SDL1_PixelFormat *format) {
+	format->Rloss = masktoloss(format->Rmask);
+	format->Gloss = masktoloss(format->Gmask);
+	format->Bloss = masktoloss(format->Bmask);
+	format->Aloss = masktoloss(format->Amask);
+	format->Rshift = masktoshift(format->Rmask);
+	format->Gshift = masktoshift(format->Gmask);
+	format->Bshift = masktoshift(format->Bmask);
+	format->Ashift = masktoshift(format->Amask);
+}
+
 static SDL1_Surface *SDLCL_CreateSurfaceFromSDL2(SDL_Surface *surface2) {
 	SDL1_Proxy *proxy;
 	int i, ncolors = surface2->format->palette ? surface2->format->palette->ncolors : 0;
@@ -170,14 +181,7 @@ static SDL1_Surface *SDLCL_CreateSurfaceFromSDL2(SDL_Surface *surface2) {
 	proxy->format.Gmask = surface2->format->Gmask;
 	proxy->format.Bmask = surface2->format->Bmask;
 	proxy->format.Amask = surface2->format->Amask;
-	proxy->format.Rloss = masktoloss(proxy->format.Rmask);
-	proxy->format.Gloss = masktoloss(proxy->format.Gmask);
-	proxy->format.Bloss = masktoloss(proxy->format.Bmask);
-	proxy->format.Aloss = masktoloss(proxy->format.Amask);
-	proxy->format.Rshift = masktoshift(proxy->format.Rmask);
-	proxy->format.Gshift = masktoshift(proxy->format.Gmask);
-	proxy->format.Bshift = masktoshift(proxy->format.Bmask);
-	proxy->format.Ashift = masktoshift(proxy->format.Amask);
+	process_masks(&proxy->format);
 	proxy->format.colorkey = 0;
 	proxy->format.alpha = 255;
 	return &proxy->surface;
@@ -476,6 +480,9 @@ static SDL_Texture *main_texture = NULL;
 static SDL_GLContext main_glcontext = NULL;
 static SDL1_Surface *main_surface = NULL;
 
+static SDL1_PixelFormat texture_format;
+static Uint32 physical_palette[256];
+
 static Uint32 mode_flags = 0;
 static SDL_bool grab = SDL_FALSE;
 
@@ -515,6 +522,7 @@ SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp, Uint32 f
 	Uint32 Rmask, Gmask, Bmask, Amask;
 	Uint32 pixfmt = SDL_PIXELFORMAT_RGBX8888;
 	Uint32 flags2 = vidflags1to2(flags);
+	int tbpp;
 	(void)width;
 	(void)height;
 	(void)bpp;
@@ -552,7 +560,22 @@ SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp, Uint32 f
 			return NULL;
 		}
 		rSDL_SetRenderDrawColor(main_renderer, 0, 0, 0, 255);
-		main_texture = rSDL_CreateTexture(main_renderer, pixfmt, SDL_TEXTUREACCESS_STREAMING, width, height);
+		if (bpp > 8) {
+			main_texture = rSDL_CreateTexture(main_renderer, pixfmt, SDL_TEXTUREACCESS_STREAMING, width, height);
+		} else {
+			main_texture = rSDL_CreateTexture(main_renderer, SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+			rSDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_RGBX8888,
+				&tbpp,
+				&texture_format.Rmask,
+				&texture_format.Gmask,
+				&texture_format.Bmask,
+				&texture_format.Amask);
+			texture_format.palette = NULL;
+			texture_format.BitsPerPixel = tbpp;
+			texture_format.BytesPerPixel = tbpp / 8;
+			process_masks(&texture_format);
+			memset(physical_palette, 0, sizeof(Uint32) * 256);
+		}
 		if (!main_texture) {
 			close_window();
 			return NULL;
@@ -591,7 +614,11 @@ int SDLCALL SDL_SetPalette (SDL1_Surface *surface, int flags, SDL1_Color *colors
 		if (rSDL_SetPaletteColors(surface->sdl2_surface->format->palette, colors2, firstcolor, ncolors)) return 0;
 		memcpy(surface->format->palette->colors + firstcolor, colors, ncolors * sizeof(SDL1_Color));
 	}
-	/* TODO: Implement physical palette manipulation */
+	if ((flags & SDL1_PHYSPAL) && surface == main_surface) {
+		if (firstcolor > 256 - ncolors) return 0;
+		for (i = 0; i < ncolors; i++)
+			physical_palette[firstcolor + i] = SDL_MapRGB(&texture_format, colors[i].r, colors[i].g, colors[i].b);
+	}
 	return 1;
 }
 
@@ -600,8 +627,10 @@ int SDLCALL SDL_SetColors (SDL1_Surface *surface, SDL1_Color *colors, int firstc
 }
 
 int SDLCALL SDL_Flip (SDL1_Surface *screen) {
+	Uint8 *src;
+	Uint32 *dest;
 	void *texpix;
-	int texpitch, i;
+	int texpitch, i, j;
 	(void)screen;
 	if (!main_renderer) return 0;
 	if (SDL_LockSurface(main_surface)) return -1;
@@ -609,8 +638,19 @@ int SDLCALL SDL_Flip (SDL1_Surface *screen) {
 		SDL_UnlockSurface(main_surface);
 		return -1;
 	}
-	for (i = 0; i < main_surface->h; i++)
-		memcpy(((Uint8 *)texpix) + i * texpitch, main_surface->pixels + i * main_surface->pitch, main_surface->w * main_surface->format->BytesPerPixel);
+	if (main_surface->format->BitsPerPixel > 8) {
+		for (i = 0; i < main_surface->h; i++)
+			memcpy(((Uint8 *)texpix) + i * texpitch,
+				main_surface->pixels + i * main_surface->pitch,
+				main_surface->w * main_surface->format->BytesPerPixel);
+	} else {
+		for (i = 0; i < main_surface->h; i++) {
+			src = main_surface->pixels + i * main_surface->pitch;
+			dest = (Uint32 *)(((Uint8 *)texpix) + i * texpitch);
+			for (j = 0; j < main_surface->w; j++)
+				dest[j] = physical_palette[src[j]];
+		}
+	}
 	rSDL_UnlockTexture(main_texture);
 	SDL_UnlockSurface(main_surface);
 	rSDL_RenderClear(main_renderer);
@@ -620,7 +660,7 @@ int SDLCALL SDL_Flip (SDL1_Surface *screen) {
 }
 
 /* TODO: Implement partial screen updates? */
-void SDL_UpdateRect (SDL1_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h) {
+void SDLCALL SDL_UpdateRect (SDL1_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h) {
 	(void)x;
 	(void)y;
 	(void)w;
