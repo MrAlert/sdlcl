@@ -284,6 +284,7 @@ SDL1_Surface *SDLCALL SDL_LoadBMP_RW(SDL1_RWops *src, int freesrc) {
 	}
 	surface2 = rSDL_LoadBMP_RW(src2, freesrc);
 	if (!freesrc) rSDL_FreeRW(src2);
+	if (!surface2) return NULL;
 	surface = SDLCL_CreateSurfaceFromSDL2(surface2);
 	if (!surface) {
 		rSDL_FreeSurface(surface2);
