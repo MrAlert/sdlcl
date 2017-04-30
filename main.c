@@ -113,3 +113,7 @@ char *SDLCALL SDL_GetError (void) {
 	errbuf[ERRBUF_SIZE - 1] = 0;
 	return errbuf;
 }
+
+void SDLCALL SDL_SetError (const char *fmt, ...) {
+	(void)fmt;
+}

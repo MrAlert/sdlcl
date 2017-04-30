@@ -324,6 +324,13 @@ typedef enum {
 	SDLK1_LAST
 } SDL1Key;
 
+Uint8 key_state[SDLK1_LAST] = { 0 };
+
+Uint8 *SDLCALL SDL_GetKeyState (int *numkeys) {
+	if (numkeys) *numkeys = SDLK1_LAST;
+	return key_state;
+}
+
 typedef struct SDL1_keysym {
 	Uint8 scancode;
 	SDL1Key sym;
@@ -773,6 +780,7 @@ int SDLCALL SDL_PollEvent (SDL1_Event *event) {
 				event->key.which = 0;
 				event->key.state = event2.key.state;
 				event->key.keysym = keysym2to1(event2.key.keysym);
+				key_state[event->key.keysym.sym] = event->key.state;
 				return 1;
 			case SDL_MOUSEMOTION:
 				event->motion.type = SDL1_MOUSEMOTION;

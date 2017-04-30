@@ -89,6 +89,10 @@ void SDLCALL SDL_PauseAudio (int pause_on) {
 	rSDL_PauseAudio(pause_on);
 }
 
+void SDLCALL SDL_MixAudio (Uint8 *dst, Uint8 *src, Uint32 len, int volume) {
+	rSDL_MixAudio(dst, src, len, volume);
+}
+
 void SDLCALL SDL_LockAudio (void) {
 	rSDL_LockAudio();
 }
