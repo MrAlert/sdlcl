@@ -309,18 +309,6 @@ int SDLCALL SDL_UpperBlit (SDL1_Surface *src, SDL1_Rect *srcrect, SDL1_Surface *
 	return ret;
 }
 
-SDL1_Surface *SDLCALL SDL_ConvertSurface (SDL1_Surface *src, SDL1_PixelFormat *fmt, Uint32 flags) {
-	Uint32 srcflags = src->flags & (SDL1_SRCALPHA | SDL1_SRCCOLORKEY | SDL1_RLEACCEL);
-	SDL1_Surface *dst = SDL_CreateRGBSurface(flags, src->w, src->h, fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask);
-	if (!dst) return NULL;
-	SDL_SetAlpha(src, srcflags & SDL1_RLEACCEL, src->format->alpha);
-	SDL_SetColorKey(src, srcflags & SDL1_RLEACCEL, src->format->colorkey);
-	SDL_UpperBlit(src, NULL, dst, NULL);
-	SDL_SetAlpha(src, srcflags & (SDL1_SRCALPHA | SDL1_RLEACCEL), src->format->alpha);
-	SDL_SetColorKey(src, srcflags & (SDL1_SRCCOLORKEY | SDL1_RLEACCEL), src->format->colorkey);
-	return dst;
-}
-
 int SDLCALL SDL_LockSurface (SDL1_Surface *surface) {
 	int ret = rSDL_LockSurface(surface->sdl2_surface);
 	surface->pixels = surface->sdl2_surface->pixels;
@@ -725,6 +713,45 @@ int SDLCALL SDL_SetPalette (SDL1_Surface *surface, int flags, SDL1_Color *colors
 
 int SDLCALL SDL_SetColors (SDL1_Surface *surface, SDL1_Color *colors, int firstcolor, int ncolors) {
 	return SDL_SetPalette(surface, SDL1_LOGPAL | SDL1_PHYSPAL, colors, firstcolor, ncolors);
+}
+
+SDL1_Surface *SDLCALL SDL_ConvertSurface (SDL1_Surface *src, SDL1_PixelFormat *fmt, Uint32 flags) {
+	SDL1_Surface *dst;
+	Uint32 colorkey = 0;
+	Uint8 kr, kg, kb, alpha = 0;
+	Uint32 srcflags;
+	dst = SDL_CreateRGBSurface(flags, src->w, src->h, fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask);
+	if (!dst) return NULL;
+	if (fmt->palette) SDL_SetColors(dst, fmt->palette->colors, 0, fmt->palette->ncolors);
+	srcflags = src->flags;
+	if (srcflags & SDL1_SRCCOLORKEY) {
+		if (!(flags & SDL1_SRCCOLORKEY) && fmt->Amask) {
+			srcflags &= ~SDL1_SRCCOLORKEY;
+		} else {
+			colorkey = src->format->colorkey;
+			SDL_SetColorKey(src, 0, 0);
+		}
+	}
+	if (srcflags & SDL1_SRCALPHA) {
+		if (fmt->Amask) {
+			srcflags &= ~SDL1_SRCALPHA;
+		} else {
+			alpha = src->format->alpha;
+			SDL_SetAlpha(src, 0, 0);
+		}
+	}
+	SDL_UpperBlit(src, NULL, dst, NULL);
+	SDL_SetClipRect(dst, &src->clip_rect);
+	if (srcflags & SDL1_SRCCOLORKEY) {
+		SDL_GetRGB(colorkey, src->format, &kr, &kg, &kb);
+		SDL_SetColorKey(dst, srcflags & (SDL1_SRCCOLORKEY | SDL1_RLEACCEL), SDL_MapRGB(dst->format, kr, kg, kb));
+		SDL_SetColorKey(src, srcflags & (SDL1_SRCCOLORKEY | SDL1_RLEACCEL), colorkey);
+	}
+	if (srcflags & SDL1_SRCALPHA) {
+		SDL_SetAlpha(dst, srcflags & (SDL1_SRCALPHA | SDL1_RLEACCEL), alpha);
+		SDL_SetAlpha(src, srcflags & (SDL1_SRCALPHA | SDL1_RLEACCEL), alpha);
+	}
+	return dst;
 }
 
 SDL1_Surface *SDL_DisplayFormat (SDL1_Surface *surface) {
