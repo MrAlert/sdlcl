@@ -324,7 +324,7 @@ typedef enum {
 	SDLK1_LAST
 } SDL1Key;
 
-Uint8 key_state[SDLK1_LAST] = { 0 };
+static Uint8 key_state[SDLK1_LAST] = { 0 };
 
 Uint8 *SDLCALL SDL_GetKeyState (int *numkeys) {
 	if (numkeys) *numkeys = SDLK1_LAST;
@@ -837,6 +837,13 @@ int SDLCALL SDL_PeepEvents (SDL1_Event *events, int numevents, SDL1_eventaction 
 	(void)numevents;
 	(void)action;
 	(void)mask;
+	return 0;
+}
+
+int SDL_WaitEvent (SDL1_Event *event) {
+	while (rSDL_WaitEvent(NULL)) {
+		if (SDL_PollEvent(event)) return 1;
+	}
 	return 0;
 }
 

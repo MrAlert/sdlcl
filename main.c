@@ -100,6 +100,15 @@ Uint32 SDLCALL SDL_WasInit (Uint32 flags) {
 	return ret;
 }
 
+typedef enum {
+	SDL1_ENOMEM,
+	SDL1_EFREAD,
+	SDL1_EFWRITE,
+	SDL1_EFSEEK,
+	SDL1_UNSUPPORTED,
+	SDL1_LASTERROR
+} SDL1_errorcode;
+
 #define ERRBUF_SIZE 1024
 char *SDLCALL SDL_GetError (void) {
 	static char errbuf[ERRBUF_SIZE];
@@ -114,6 +123,14 @@ char *SDLCALL SDL_GetError (void) {
 	return errbuf;
 }
 
+/* TODO: Implement these error-setting functions */
 void SDLCALL SDL_SetError (const char *fmt, ...) {
 	(void)fmt;
+}
+
+void SDLCALL SDL_ClearError (void) {
+}
+
+void SDLCALL SDL_Error (SDL1_errorcode code) {
+	(void)code;
 }

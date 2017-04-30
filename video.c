@@ -976,3 +976,8 @@ int SDLCALL SDL_WM_IconifyWindow (void) {
 	rSDL_MinimizeWindow(main_window);
 	return 1;
 }
+
+int SDLCALL SDL_WM_ToggleFullScreen (SDL1_Surface *surface) {
+	(void)surface;
+	return 0;
+}
