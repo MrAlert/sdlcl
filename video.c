@@ -284,6 +284,7 @@ int SDLCALL SDL_UpperBlit (SDL1_Surface *src, SDL1_Rect *srcrect, SDL1_Surface *
 	SDL_Rect srcrect2, *srcptr = NULL;
 	SDL_Rect dstrect2, *dstptr = NULL;
 	int ret;
+	if (!src || !dst) return -1;
 	if (srcrect) {
 		srcrect2.x = srcrect->x;
 		srcrect2.y = srcrect->y;
@@ -328,12 +329,6 @@ int SDLCALL SDL_LockSurface (SDL1_Surface *surface) {
 
 void SDLCALL SDL_UnlockSurface (SDL1_Surface *surface) {
 	rSDL_UnlockSurface(surface->sdl2_surface);
-}
-
-void SDLCALL SDL_FreeSurface (SDL1_Surface *surface) {
-	SDL1_Proxy *proxy = (SDL1_Proxy *)surface;
-	rSDL_FreeSurface(surface->sdl2_surface);
-	free(proxy);
 }
 
 SDL1_Surface *SDLCALL SDL_LoadBMP_RW (SDL1_RWops *src, int freesrc) {
@@ -581,10 +576,21 @@ static Uint32 physical_palette[256];
 static Uint32 mode_flags = 0;
 static SDL_bool grab = SDL_FALSE;
 
+void SDLCALL SDL_FreeSurface (SDL1_Surface *surface) {
+	SDL1_Proxy *proxy;
+	if (surface && surface != main_surface) {
+		proxy = (SDL1_Proxy *)surface;
+		rSDL_FreeSurface(surface->sdl2_surface);
+		free(proxy);
+	}
+}
+
 static void close_window (void) {
+	SDL1_Surface *surface;
 	if (main_surface) {
-		SDL_FreeSurface(main_surface);
+		surface = main_surface;
 		main_surface = NULL;
+		SDL_FreeSurface(surface);
 	}
 	if (main_glcontext) {
 		rSDL_GL_DeleteContext(main_glcontext);
