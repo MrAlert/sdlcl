@@ -308,6 +308,18 @@ int SDLCALL SDL_UpperBlit (SDL1_Surface *src, SDL1_Rect *srcrect, SDL1_Surface *
 	return ret;
 }
 
+SDL1_Surface *SDLCALL SDL_ConvertSurface (SDL1_Surface *src, SDL1_PixelFormat *fmt, Uint32 flags) {
+	Uint32 srcflags = src->flags & (SDL1_SRCALPHA | SDL1_SRCCOLORKEY | SDL1_RLEACCEL);
+	SDL1_Surface *dst = SDL_CreateRGBSurface(flags, src->w, src->h, fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask);
+	if (!dst) return NULL;
+	SDL_SetAlpha(src, srcflags & SDL1_RLEACCEL, src->format->alpha);
+	SDL_SetColorKey(src, srcflags & SDL1_RLEACCEL, src->format->colorkey);
+	SDL_UpperBlit(src, NULL, dst, NULL);
+	SDL_SetAlpha(src, srcflags & (SDL1_SRCALPHA | SDL1_RLEACCEL), src->format->alpha);
+	SDL_SetColorKey(src, srcflags & (SDL1_SRCCOLORKEY | SDL1_RLEACCEL), src->format->colorkey);
+	return dst;
+}
+
 int SDLCALL SDL_LockSurface (SDL1_Surface *surface) {
 	int ret = rSDL_LockSurface(surface->sdl2_surface);
 	surface->pixels = surface->sdl2_surface->pixels;
@@ -707,6 +719,11 @@ int SDLCALL SDL_SetPalette (SDL1_Surface *surface, int flags, SDL1_Color *colors
 
 int SDLCALL SDL_SetColors (SDL1_Surface *surface, SDL1_Color *colors, int firstcolor, int ncolors) {
 	return SDL_SetPalette(surface, SDL1_LOGPAL | SDL1_PHYSPAL, colors, firstcolor, ncolors);
+}
+
+SDL1_Surface *SDL_DisplayFormat (SDL1_Surface *surface) {
+	if (!main_surface) return NULL;
+	return SDL_ConvertSurface(surface, main_surface->format, 0);
 }
 
 int SDLCALL SDL_Flip (SDL1_Surface *screen) {
