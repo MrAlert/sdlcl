@@ -56,6 +56,7 @@ SDL2_SYMBOL(SDL_UnlockSurface, void, (SDL_Surface *surface))
 SDL2_SYMBOL(SDL_FillRect, int, (SDL_Surface *dst, const SDL_Rect *rect, Uint32 color))
 SDL2_SYMBOL(SDL_UpperBlit, int, (SDL_Surface *src, const SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect))
 SDL2_SYMBOL(SDL_LoadBMP_RW, SDL_Surface *, (SDL_RWops *src, int freesrc))
+SDL2_SYMBOL(SDL_SaveBMP_RW, int, (SDL_Surface *surface, SDL_RWops *dst, int freedst))
 
 SDL2_SYMBOL(SDL_MapRGBA, Uint32, (const SDL_PixelFormat *format, Uint8 r, Uint8 g, Uint8 b, Uint8 a))
 SDL2_SYMBOL(SDL_MapRGB, Uint32, (const SDL_PixelFormat *format, Uint8 r, Uint8 g, Uint8 b))

@@ -303,7 +303,7 @@ void SDLCALL SDL_FreeSurface (SDL1_Surface *surface) {
 	free(proxy);
 }
 
-SDL1_Surface *SDLCALL SDL_LoadBMP_RW(SDL1_RWops *src, int freesrc) {
+SDL1_Surface *SDLCALL SDL_LoadBMP_RW (SDL1_RWops *src, int freesrc) {
 	SDL1_Surface *surface;
 	SDL_Surface *surface2;
 	SDL_RWops *src2 = SDLCL_RWFromSDL1(src);
@@ -320,6 +320,15 @@ SDL1_Surface *SDLCALL SDL_LoadBMP_RW(SDL1_RWops *src, int freesrc) {
 		return NULL;
 	}
 	return surface;
+}
+
+int SDLCALL SDL_SaveBMP_RW (SDL1_Surface *surface, SDL1_RWops *dst, int freedst) {
+	int ret;
+	SDL_RWops *dst2 = SDLCL_RWFromSDL1(dst);
+	if (!dst2) return -1;
+	ret = rSDL_SaveBMP_RW(surface->sdl2_surface, dst2, freedst);
+	if (!freedst) rSDL_FreeRW(dst2);
+	return ret;
 }
 
 static Uint32 map_component (Uint8 v, Uint8 loss, Uint8 shift, Uint32 mask) {
