@@ -246,6 +246,27 @@ int SDLCALL SDL_SetColorKey (SDL1_Surface *surface, Uint32 flag, Uint32 key) {
 	return 0;
 }
 
+void SDL_GetClipRect (SDL1_Surface *surface, SDL1_Rect *rect) {
+	*rect = surface->clip_rect;
+}
+
+void SDL_SetClipRect (SDL1_Surface *surface, SDL1_Rect *rect) {
+	SDL_Rect rect2, *rectptr = NULL;
+	if (rect) {
+		rect2.x = rect->x;
+		rect2.y = rect->y;
+		rect2.w = rect->w;
+		rect2.h = rect->h;
+		rectptr = &rect2;
+	}
+	rSDL_SetClipRect(surface->sdl2_surface, rectptr);
+	rSDL_GetClipRect(surface->sdl2_surface, &rect2);
+	surface->clip_rect.x = rect2.x;
+	surface->clip_rect.y = rect2.y;
+	surface->clip_rect.w = rect2.w;
+	surface->clip_rect.h = rect2.h;
+}
+
 int SDLCALL SDL_FillRect (SDL1_Surface *dst, SDL1_Rect *dstrect, Uint32 color) {
 	SDL_Rect rect2, *rectptr = NULL;
 	if (dstrect) {

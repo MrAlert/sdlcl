@@ -50,6 +50,8 @@ SDL2_SYMBOL(SDL_SetSurfaceBlendMode, int, (SDL_Surface *surface, SDL_BlendMode b
 SDL2_SYMBOL(SDL_SetSurfaceAlphaMod, int, (SDL_Surface *surface, Uint8 alpha))
 SDL2_SYMBOL(SDL_SetColorKey, int, (SDL_Surface *surface, int flag, Uint32 key))
 SDL2_SYMBOL(SDL_SetSurfaceRLE, int, (SDL_Surface *surface, int flag))
+SDL2_SYMBOL(SDL_GetClipRect, void, (SDL_Surface *surface, SDL_Rect *rect))
+SDL2_SYMBOL(SDL_SetClipRect, SDL_bool, (SDL_Surface *surface, const SDL_Rect *rect))
 SDL2_SYMBOL(SDL_FreeSurface, void, (SDL_Surface *surface))
 SDL2_SYMBOL(SDL_LockSurface, int, (SDL_Surface *surface))
 SDL2_SYMBOL(SDL_UnlockSurface, void, (SDL_Surface *surface))
