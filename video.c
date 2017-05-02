@@ -311,6 +311,23 @@ int SDLCALL SDL_UpperBlit (SDL1_Surface *src, SDL1_Rect *srcrect, SDL1_Surface *
 	return ret;
 }
 
+int SDLCALL SDL_LowerBlit (SDL1_Surface *src, SDL1_Rect *srcrect, SDL1_Surface *dst, SDL1_Rect *dstrect) {
+	SDL_Rect srcrect2, *srcptr = NULL;
+	SDL_Rect dstrect2;
+	if (srcrect) {
+		srcrect2.x = srcrect->x;
+		srcrect2.y = srcrect->y;
+		srcrect2.w = srcrect->w;
+		srcrect2.h = srcrect->h;
+		srcptr = &srcrect2;
+	}
+	dstrect2.x = dstrect->x;
+	dstrect2.y = dstrect->y;
+	dstrect2.w = dstrect->w;
+	dstrect2.h = dstrect->h;
+	return rSDL_LowerBlit(src->sdl2_surface, srcptr, dst->sdl2_surface, &dstrect2);
+}
+
 int SDLCALL SDL_LockSurface (SDL1_Surface *surface) {
 	int ret = rSDL_LockSurface(surface->sdl2_surface);
 	surface->pixels = surface->sdl2_surface->pixels;
@@ -722,6 +739,7 @@ SDL1_Surface *SDLCALL SDL_ConvertSurface (SDL1_Surface *src, SDL1_PixelFormat *f
 	Uint32 colorkey = 0;
 	Uint8 kr, kg, kb, alpha = 0;
 	Uint32 srcflags;
+	SDL1_Rect rect = { 0, 0, src->w, src->h };
 	dst = SDL_CreateRGBSurface(flags, src->w, src->h, fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask);
 	if (!dst) return NULL;
 	if (fmt->palette) SDL_SetColors(dst, fmt->palette->colors, 0, fmt->palette->ncolors);
@@ -742,7 +760,7 @@ SDL1_Surface *SDLCALL SDL_ConvertSurface (SDL1_Surface *src, SDL1_PixelFormat *f
 			SDL_SetAlpha(src, 0, 0);
 		}
 	}
-	SDL_UpperBlit(src, NULL, dst, NULL);
+	SDL_LowerBlit(src, &rect, dst, &rect);
 	SDL_SetClipRect(dst, &src->clip_rect);
 	if (srcflags & SDL1_SRCCOLORKEY) {
 		SDL_GetRGB(colorkey, src->format, &kr, &kg, &kb);
