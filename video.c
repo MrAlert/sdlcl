@@ -734,18 +734,14 @@ int SDLCALL SDL_SetColors (SDL1_Surface *surface, SDL1_Color *colors, int firstc
 	return SDL_SetPalette(surface, SDL1_LOGPAL | SDL1_PHYSPAL, colors, firstcolor, ncolors);
 }
 
-SDL1_Surface *SDLCALL SDL_ConvertSurface (SDL1_Surface *src, SDL1_PixelFormat *fmt, Uint32 flags) {
-	SDL1_Surface *dst;
+static void convert_surface_dst (SDL1_Surface *src, SDL1_Surface *dst) {
 	Uint32 colorkey = 0;
 	Uint8 kr, kg, kb, alpha = 0;
 	Uint32 srcflags;
 	SDL1_Rect rect = { 0, 0, src->w, src->h };
-	dst = SDL_CreateRGBSurface(flags, src->w, src->h, fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask);
-	if (!dst) return NULL;
-	if (fmt->palette) SDL_SetColors(dst, fmt->palette->colors, 0, fmt->palette->ncolors);
 	srcflags = src->flags;
 	if (srcflags & SDL1_SRCCOLORKEY) {
-		if (!(flags & SDL1_SRCCOLORKEY) && fmt->Amask) {
+		if (!(dst->flags & SDL1_SRCCOLORKEY) && dst->format->Amask) {
 			srcflags &= ~SDL1_SRCCOLORKEY;
 		} else {
 			colorkey = src->format->colorkey;
@@ -753,7 +749,7 @@ SDL1_Surface *SDLCALL SDL_ConvertSurface (SDL1_Surface *src, SDL1_PixelFormat *f
 		}
 	}
 	if (srcflags & SDL1_SRCALPHA) {
-		if (fmt->Amask) {
+		if (dst->format->Amask) {
 			srcflags &= ~SDL1_SRCALPHA;
 		} else {
 			alpha = src->format->alpha;
@@ -771,12 +767,31 @@ SDL1_Surface *SDLCALL SDL_ConvertSurface (SDL1_Surface *src, SDL1_PixelFormat *f
 		SDL_SetAlpha(dst, srcflags & (SDL1_SRCALPHA | SDL1_RLEACCEL), alpha);
 		SDL_SetAlpha(src, srcflags & (SDL1_SRCALPHA | SDL1_RLEACCEL), alpha);
 	}
+}
+
+SDL1_Surface *SDLCALL SDL_ConvertSurface (SDL1_Surface *src, SDL1_PixelFormat *fmt, Uint32 flags) {
+	SDL1_Surface *dst;
+	dst = SDL_CreateRGBSurface(flags, src->w, src->h, fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask);
+	if (!dst) return NULL;
+	if (fmt->palette) SDL_SetColors(dst, fmt->palette->colors, 0, fmt->palette->ncolors);
+	convert_surface_dst(src, dst);
 	return dst;
 }
 
 SDL1_Surface *SDL_DisplayFormat (SDL1_Surface *surface) {
 	if (!main_surface) return NULL;
 	return SDL_ConvertSurface(surface, main_surface->format, 0);
+}
+
+SDL1_Surface *SDL_DisplayFormatAlpha (SDL1_Surface *surface) {
+	int depth;
+	Uint32 Rmask, Gmask, Bmask, Amask;
+	SDL1_Surface *dst;
+	rSDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_RGBA8888, &depth, &Rmask, &Gmask, &Bmask, &Amask);
+	dst = SDL_CreateRGBSurface(0, surface->w, surface->h, depth, Rmask, Gmask, Bmask, Amask);
+	if (!dst) return NULL;
+	convert_surface_dst(surface, dst);
+	return dst;
 }
 
 int SDLCALL SDL_Flip (SDL1_Surface *screen) {
