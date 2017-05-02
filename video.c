@@ -194,12 +194,14 @@ static SDL1_Surface *SDLCL_CreateSurfaceFromSDL2(SDL_Surface *surface2) {
 	return &proxy->surface;
 }
 
-static void update_surface_blend(SDL1_Surface *surface) {
-	int keyflag = (surface->flags & SDL1_SRCCOLORKEY) && (!surface->format->Amask || !(surface->flags & SDL1_SRCALPHA));
+static void update_surface_blend (SDL1_Surface *surface) {
+	int isalpha = surface->format->Amask && !surface->format->palette;
+	int colorkey = (surface->flags & SDL1_SRCCOLORKEY) && (!isalpha || !(surface->flags & SDL1_SRCALPHA));
+	int alphablend = surface->flags & SDL1_SRCALPHA && (isalpha || surface->format->alpha != 255);
 	rSDL_SetSurfaceRLE(surface->sdl2_surface, surface->flags & SDL1_RLEACCEL);
-	rSDL_SetSurfaceBlendMode(surface->sdl2_surface, (surface->flags & SDL1_SRCALPHA) ? SDL_BLENDMODE_BLEND : SDL_BLENDMODE_NONE);
-	rSDL_SetSurfaceAlphaMod(surface->sdl2_surface, surface->format->Amask ? 255 : surface->format->alpha);
-	rSDL_SetColorKey(surface->sdl2_surface, keyflag ? SDL_TRUE : SDL_FALSE, surface->format->colorkey);
+	rSDL_SetSurfaceBlendMode(surface->sdl2_surface, alphablend ? SDL_BLENDMODE_BLEND : SDL_BLENDMODE_NONE);
+	rSDL_SetSurfaceAlphaMod(surface->sdl2_surface, (isalpha || !alphablend) ? 255 : surface->format->alpha);
+	rSDL_SetColorKey(surface->sdl2_surface, colorkey ? SDL_TRUE : SDL_FALSE, surface->format->colorkey);
 	surface->offset = SDL_MUSTLOCK(surface->sdl2_surface);
 }
 
