@@ -20,56 +20,99 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <stdlib.h>
+
 #include "SDL2.h"
+
+typedef struct SDL1_Joystick SDL1_Joystick;
+
+struct SDL1_Joystick {
+	int index;
+	SDL_Joystick *sdl2;
+	SDL1_Joystick *next;
+};
+
+static SDL1_Joystick *joystick_list = NULL;
 
 int SDLCALL SDL_NumJoysticks (void) {
 	return rSDL_NumJoysticks();
 }
 
-SDL_Joystick *SDLCALL SDL_JoystickOpen (int index) {
-	return rSDL_JoystickOpen(index);
+SDL1_Joystick *SDLCALL SDL_JoystickOpen (int index) {
+	SDL1_Joystick *joystick;
+	SDL_Joystick *sdl2 = rSDL_JoystickOpen(index);
+	if (!sdl2) return NULL;
+	joystick = malloc(sizeof(SDL1_Joystick));
+	if (!joystick) {
+		rSDL_JoystickClose(sdl2);
+		return NULL;
+	}
+	joystick->index = index;
+	joystick->sdl2 = sdl2;
+	joystick->next = joystick_list;
+	joystick_list = joystick;
+	return joystick;
 }
 
 const char *SDLCALL SDL_JoystickName (int index) {
 	return rSDL_JoystickNameForIndex(index);
 }
 
-int SDLCALL SDL_JoystickNumAxes (SDL_Joystick *joystick) {
-	return rSDL_JoystickNumAxes(joystick);
+int SDLCALL SDL_JoystickOpened (int index) {
+	SDL1_Joystick *joystick;
+	for (joystick = joystick_list; joystick != NULL; joystick = joystick->next)
+		if (joystick->index == index) return 1;
+	return 0;
 }
 
-int SDLCALL SDL_JoystickNumBalls (SDL_Joystick *joystick) {
-	return rSDL_JoystickNumBalls(joystick);
+int SDLCALL SDL_JoystickIndex (SDL1_Joystick *joystick) {
+	return joystick->index;
 }
 
-int SDLCALL SDL_JoystickNumButtons (SDL_Joystick *joystick) {
-	return rSDL_JoystickNumButtons(joystick);
+int SDLCALL SDL_JoystickNumAxes (SDL1_Joystick *joystick) {
+	return rSDL_JoystickNumAxes(joystick->sdl2);
 }
 
-int SDLCALL SDL_JoystickNumHats (SDL_Joystick *joystick) {
-	return rSDL_JoystickNumHats(joystick);
+int SDLCALL SDL_JoystickNumBalls (SDL1_Joystick *joystick) {
+	return rSDL_JoystickNumBalls(joystick->sdl2);
 }
 
-Sint16 SDLCALL SDL_JoystickGetAxis (SDL_Joystick *joystick, int axis) {
-	return rSDL_JoystickGetAxis(joystick, axis);
+int SDLCALL SDL_JoystickNumButtons (SDL1_Joystick *joystick) {
+	return rSDL_JoystickNumButtons(joystick->sdl2);
 }
 
-int SDLCALL SDL_JoystickGetBall (SDL_Joystick *joystick, int ball, int *dx, int *dy) {
-	return rSDL_JoystickGetBall(joystick, ball, dx, dy);
+int SDLCALL SDL_JoystickNumHats (SDL1_Joystick *joystick) {
+	return rSDL_JoystickNumHats(joystick->sdl2);
 }
 
-Uint8 SDLCALL SDL_JoystickGetButton (SDL_Joystick *joystick, int button) {
-	return rSDL_JoystickGetButton(joystick, button);
+Sint16 SDLCALL SDL_JoystickGetAxis (SDL1_Joystick *joystick, int axis) {
+	return rSDL_JoystickGetAxis(joystick->sdl2, axis);
 }
 
-Uint8 SDLCALL SDL_JoystickGetHat (SDL_Joystick *joystick, int hat) {
-	return rSDL_JoystickGetHat(joystick, hat);
+int SDLCALL SDL_JoystickGetBall (SDL1_Joystick *joystick, int ball, int *dx, int *dy) {
+	return rSDL_JoystickGetBall(joystick->sdl2, ball, dx, dy);
+}
+
+Uint8 SDLCALL SDL_JoystickGetButton (SDL1_Joystick *joystick, int button) {
+	return rSDL_JoystickGetButton(joystick->sdl2, button);
+}
+
+Uint8 SDLCALL SDL_JoystickGetHat (SDL1_Joystick *joystick, int hat) {
+	return rSDL_JoystickGetHat(joystick->sdl2, hat);
 }
 
 void SDLCALL SDL_JoystickUpdate (void) {
 	rSDL_JoystickUpdate();
 }
 
-void SDLCALL SDL_JoystickClose (SDL_Joystick *joystick) {
-	return rSDL_JoystickClose(joystick);
+void SDLCALL SDL_JoystickClose (SDL1_Joystick *joystick) {
+	SDL1_Joystick **ptr;
+	rSDL_JoystickClose(joystick->sdl2);
+	for (ptr = &joystick_list; ptr != NULL; ptr = &((*ptr)->next)) {
+		if (*ptr == joystick) {
+			*ptr = (*ptr)->next;
+			break;
+		}
+	}
+	free(joystick);
 }
