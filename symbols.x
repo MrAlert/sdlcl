@@ -99,6 +99,7 @@ SDL2_SYMBOL(SDL_GL_LoadLibrary, int, (const char *path))
 SDL2_SYMBOL(SDL_GL_GetProcAddress, void *, (const char *proc))
 SDL2_SYMBOL(SDL_GL_SwapWindow, void, (SDL_Window *window))
 SDL2_SYMBOL(SDL_GL_SetAttribute, int, (SDL_GLattr attr, int value))
+SDL2_SYMBOL(SDL_GL_GetAttribute, int, (SDL_GLattr attr, int *value))
 SDL2_SYMBOL(SDL_GL_CreateContext, SDL_GLContext, (SDL_Window *window))
 SDL2_SYMBOL(SDL_GL_DeleteContext, void, (SDL_GLContext context))
 

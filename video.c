@@ -978,6 +978,21 @@ int SDLCALL SDL_GL_SetAttribute (SDL1_GLattr attr, int value) {
 	}
 }
 
+int SDLCALL SDL_GL_GetAttribute (SDL1_GLattr attr, int *value) {
+	SDL_GLattr attr2;
+	if (glattr1to2(attr, &attr2)) {
+		return rSDL_GL_GetAttribute(attr2, value);
+	} else {
+		switch (attr) {
+			case SDL1_GL_SWAP_CONTROL:
+				*value = swap_control;
+				return 0;
+			default:
+				return -1;
+		}
+	}
+}
+
 void SDLCALL SDL_WM_SetCaption (const char *title, const char *icon) {
 	(void)title;
 	(void)icon;
