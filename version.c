@@ -25,16 +25,7 @@
 #include <dlfcn.h>
 
 #include "SDL2.h"
-
-typedef struct SDL1_version {
-	Uint8 major;
-	Uint8 minor;
-	Uint8 patch;
-} SDL1_version;
-
-#define SDL1_MAJOR_VERSION	1
-#define SDL1_MINOR_VERSION	2
-#define SDL1_PATCHLEVEL		15
+#include "version.h"
 
 /* The current SDL version */
 static SDL1_version version = 

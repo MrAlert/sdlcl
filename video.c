@@ -25,6 +25,7 @@
 
 #include "SDL2.h"
 #include "rwops.h"
+#include "version.h"
 
 typedef struct SDL1_Rect {
 	Sint16 x, y;
@@ -1029,5 +1030,71 @@ int SDLCALL SDL_WM_IconifyWindow (void) {
 
 int SDLCALL SDL_WM_ToggleFullScreen (SDL1_Surface *surface) {
 	(void)surface;
+	return 0;
+}
+
+typedef enum {
+	SDL1_SYSWM_X11
+} SDL1_SYSWM_TYPE;
+
+typedef struct SDL1_SysWMinfo {
+	SDL1_version version;
+	SDL1_SYSWM_TYPE subsystem;
+	union {
+#if defined(SDL_VIDEO_DRIVER_X11)
+		struct {
+			Display *display;
+			Window window;
+			void (*lock_func)(void);
+			void (*unlock_func)(void);
+			/* SDL 1.0.2 */
+			Window fswindow;
+			Window wmwindow;
+			/* SDL 1.2.12 */
+			Display *gfxdisplay;
+		} x11;
+#endif
+		int dummy;
+	} info;
+} SDL1_SysWMinfo;
+
+static int compare_ver (SDL1_version version, int major, int minor, int patch) {
+	if (version.major == major) {
+		if (version.minor == minor) {
+			return version.patch >= patch;
+		} else {
+			return version.minor >= minor;
+		}
+	} else {
+		return version.major >= major;
+	}
+}
+
+static void noop (void) {
+}
+
+int SDLCALL SDL_GetWMInfo (SDL1_SysWMinfo *info) {
+	SDL_SysWMinfo info2;
+	if (!main_window) return 0;
+	SDL_VERSION(&info2.version);
+	if (rSDL_GetWindowWMInfo(main_window, &info2)) {
+#if defined(SDL_VIDEO_DRIVER_X11)
+		if (info2.subsystem == SDL_SYSWM_X11 && compare_ver(info->version, 1, 0, 0)) {
+			info->subsystem = SDL1_SYSWM_X11;
+
+			info->info.x11.display = info2.info.x11.display;
+			info->info.x11.window = info2.info.x11.window;
+			info->info.x11.lock_func = noop;
+			info->info.x11.unlock_func = noop;
+			if (compare_ver(info->version, 1, 0, 2)) {
+				info->info.x11.fswindow = 0;
+				info->info.x11.wmwindow = 0;
+			}
+			if (compare_ver(info->version, 1, 2, 12))
+				info->info.x11.gfxdisplay = NULL;
+			return 1;
+		}
+#endif
+	}
 	return 0;
 }

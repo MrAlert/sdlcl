@@ -103,6 +103,8 @@ SDL2_SYMBOL(SDL_GL_GetAttribute, int, (SDL_GLattr attr, int *value))
 SDL2_SYMBOL(SDL_GL_CreateContext, SDL_GLContext, (SDL_Window *window))
 SDL2_SYMBOL(SDL_GL_DeleteContext, void, (SDL_GLContext context))
 
+SDL2_SYMBOL(SDL_GetWindowWMInfo, SDL_bool, (SDL_Window *window, SDL_SysWMinfo *info))
+
 /* Audio subsystem */
 SDL2_SYMBOL(SDL_OpenAudio, int, (SDL_AudioSpec *desired, SDL_AudioSpec *obtained))
 SDL2_SYMBOL(SDL_PauseAudio, void, (int pause_on))
