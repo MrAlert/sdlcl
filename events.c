@@ -728,11 +728,11 @@ static void update_active (SDL1_ActiveEvent *active) {
 
 #define MAXEVENTS 128
 static struct {
-	/* SDL_mutex *lock; */
+	SDL_mutex *lock;
 	int head;
 	int tail;
 	SDL1_Event event[MAXEVENTS];
-} event_queue;
+} event_queue = { NULL, 0, 0 , { { SDL1_NOEVENT } }};
 
 static int add_event (SDL1_Event *event) {
 	int tail = (event_queue.tail + 1) % MAXEVENTS;
@@ -772,27 +772,32 @@ typedef enum {
 int SDLCALL SDL_PeepEvents (SDL1_Event *events, int numevents, SDL1_eventaction action, Uint32 mask) {
 	SDL1_Event tmpevent;
 	int i, used = 0;
-	if (action == SDL1_ADDEVENT) {
-		for (i = 0; i < numevents; i++)
-			used += add_event(&events[i]);
-	} else {
-		if (!events) {
-			action = SDL1_PEEKEVENT;
-			numevents = 1;
-			events = &tmpevent;
-		}
-		i = event_queue.head;
-		while ((used < numevents) && (i != event_queue.tail)) {
-			if (mask & SDL1_EVENTMASK(event_queue.event[i].type)) {
-				events[used++] = event_queue.event[i];
-				if (action == SDL1_GETEVENT) i = cut_event(i);
-				else i = (i + 1) % MAXEVENTS;
-			} else {
-				i = (i + 1) % MAXEVENTS;
+	if (event_queue.lock && !rSDL_LockMutex(event_queue.lock)) {
+		if (action == SDL1_ADDEVENT) {
+			for (i = 0; i < numevents; i++)
+				used += add_event(&events[i]);
+		} else {
+			if (!events) {
+				action = SDL1_PEEKEVENT;
+				numevents = 1;
+				events = &tmpevent;
+			}
+			i = event_queue.head;
+			while ((used < numevents) && (i != event_queue.tail)) {
+				if (mask & SDL1_EVENTMASK(event_queue.event[i].type)) {
+					events[used++] = event_queue.event[i];
+					if (action == SDL1_GETEVENT) i = cut_event(i);
+					else i = (i + 1) % MAXEVENTS;
+				} else {
+					i = (i + 1) % MAXEVENTS;
+				}
 			}
 		}
+		rSDL_UnlockMutex(event_queue.lock);
+		return used;
+	} else {
+		return -1;
 	}
-	return used;
 }
 
 int SDLCALL SDL_PushEvent(SDL1_Event *event) {
@@ -807,7 +812,7 @@ void SDLCALL SDL_SetEventFilter (SDL1_EventFilter filter) {
 	event_filter = filter;
 }
 
-SDL1_EventFilter SDL_GetEventFilter (void) {
+SDL1_EventFilter SDLCALL SDL_GetEventFilter (void) {
 	return event_filter;
 }
 
@@ -818,6 +823,11 @@ static void add_event_filtered (SDL1_Event *event) {
 void SDLCALL SDL_PumpEvents (void) {
 	SDL1_Event event;
 	SDL_Event event2;
+	if (!event_queue.lock) {
+		/* SDL_PumpEvents() is only supposed to be called from one thread, */
+		/* so initializing like this should be safe. */
+		event_queue.lock = rSDL_CreateMutex();
+	}
 	while (rSDL_PollEvent(&event2)) {
 		switch (event2.type) {
 			case SDL_WINDOWEVENT:
@@ -929,10 +939,10 @@ int SDLCALL SDL_PollEvent (SDL1_Event *event) {
 }
 
 int SDLCALL SDL_WaitEvent (SDL1_Event *event) {
-	while (rSDL_WaitEvent(NULL)) {
-		if (SDL_PollEvent(event)) return 1;
+	while (!SDL_PollEvent(event)) {
+		if (!rSDL_WaitEvent(NULL)) return 0;
 	}
-	return 0;
+	return 1;
 }
 
 Uint8 SDLCALL SDL_GetAppState (void) {
