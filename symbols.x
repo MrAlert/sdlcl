@@ -128,6 +128,8 @@ SDL2_SYMBOL(SDL_PeepEvents, int, (SDL_Event *events, int numevents, SDL_eventact
 SDL2_SYMBOL(SDL_WaitEvent, int, (SDL_Event *event))
 SDL2_SYMBOL(SDL_PumpEvents, void, (void))
 SDL2_SYMBOL(SDL_PushEvent, int, (SDL_Event * event))
+SDL2_SYMBOL(SDL_SetEventFilter, void, (SDL_EventFilter filter, void *userdata))
+SDL2_SYMBOL(SDL_GetEventFilter, SDL_bool, (SDL_EventFilter *filter, void **userdata))
 
 /* Joystick subsystem */
 SDL2_SYMBOL(SDL_NumJoysticks, int, (void))

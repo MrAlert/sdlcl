@@ -615,6 +615,9 @@ typedef enum {
 	SDL1_NUM_EVENTS = 32
 } SDL1_EventType;
 
+#define SDL1_EVENTMASK(X) (1<<(X))
+#define SDL1_ALLEVENTS 0xFFFFFFFF
+
 typedef struct SDL1_ActiveEvent {
 	Uint8 type;
 	Uint8 gain;
@@ -708,7 +711,6 @@ Uint8 SDLCALL SDL_GetMouseState (int *x, int *y) {
     return mousestate2to1(rSDL_GetMouseState(x, y));
 }
 
-static SDL1_Event inject_event = { SDL1_NOEVENT };
 static Uint16 lastx = 0;
 static Uint16 lasty = 0;
 
@@ -723,107 +725,42 @@ static void update_active (SDL1_ActiveEvent *active) {
 	else active_map &= ~active->state;
 }
 
-int SDLCALL SDL_PollEvent (SDL1_Event *event) {
-	SDL_Event event2;
-	if (inject_event.type != SDL1_NOEVENT) {
-		if (event) {
-			*event = inject_event;
-			inject_event.type = SDL1_NOEVENT;
-		}
+
+#define MAXEVENTS 128
+static struct {
+	/* SDL_mutex *lock; */
+	int head;
+	int tail;
+	SDL1_Event event[MAXEVENTS];
+} event_queue;
+
+static int add_event (SDL1_Event *event) {
+	int tail = (event_queue.tail + 1) % MAXEVENTS;
+	if (tail != event_queue.head) {
+		event_queue.event[event_queue.tail] = *event;
+		event_queue.tail = tail;
 		return 1;
+	} else {
+		return 0;
 	}
-	if (!event) return rSDL_PollEvent(NULL);
-	while (rSDL_PollEvent(&event2)) {
-		switch (event2.type) {
-			case SDL_WINDOWEVENT:
-				event->active.type = SDL1_ACTIVEEVENT;
-				switch (event2.window.event) {
-					case SDL_WINDOWEVENT_MINIMIZED:
-						event->active.gain = 0;
-						event->active.state = SDL1_APPACTIVE;
-						update_active(&event->active);
-						return 1;
-					case SDL_WINDOWEVENT_MAXIMIZED:
-					case SDL_WINDOWEVENT_RESTORED:
-						event->active.gain = 1;
-						event->active.state = SDL1_APPACTIVE;
-						update_active(&event->active);
-						return 1;
-					case SDL_WINDOWEVENT_ENTER:
-						event->active.gain = 1;
-						event->active.state = SDL1_APPMOUSEFOCUS;
-						update_active(&event->active);
-						return 1;
-					case SDL_WINDOWEVENT_LEAVE:
-						event->active.gain = 0;
-						event->active.state = SDL1_APPMOUSEFOCUS;
-						update_active(&event->active);
-						return 1;
-					case SDL_WINDOWEVENT_FOCUS_GAINED:
-						event->active.gain = 1;
-						event->active.state = SDL1_APPINPUTFOCUS;
-						update_active(&event->active);
-						return 1;
-					case SDL_WINDOWEVENT_FOCUS_LOST:
-						event->active.gain = 0;
-						event->active.state = SDL1_APPINPUTFOCUS;
-						update_active(&event->active);
-						return 1;
-					default:
-						break;
-				}
-				break;
-			case SDL_KEYDOWN:
-			case SDL_KEYUP:
-				if (!key_delay && event2.key.repeat) break;
-				event->key.type = (event2.type == SDL_KEYDOWN) ? SDL1_KEYDOWN : SDL1_KEYUP;
-				event->key.which = 0;
-				event->key.state = event2.key.state;
-				event->key.keysym = keysym2to1(event2.key.keysym);
-				key_state[event->key.keysym.sym] = event->key.state;
-				return 1;
-			case SDL_MOUSEMOTION:
-				event->motion.type = SDL1_MOUSEMOTION;
-				event->motion.which = 0;
-				event->motion.state = mousestate2to1(event2.motion.state);
-				event->motion.x = event2.motion.x;
-				event->motion.y = event2.motion.y;
-				event->motion.xrel = event2.motion.xrel;
-				event->motion.yrel = event2.motion.yrel;
-				lastx = event2.motion.x;
-				lasty = event2.motion.y;
-				return 1;
-			case SDL_MOUSEBUTTONDOWN:
-			case SDL_MOUSEBUTTONUP:
-				event->button.type = (event2.type == SDL_MOUSEBUTTONDOWN) ? SDL1_MOUSEBUTTONDOWN : SDL1_MOUSEBUTTONUP;
-				event->button.which = 0;
-				event->button.button = mousebutton2to1(event2.button.button);
-				event->button.state = (event2.button.state == SDL_PRESSED) ? SDL1_PRESSED : SDL1_RELEASED;
-				event->button.x = event2.button.x;
-				event->button.y = event2.button.y;
-				lastx = event2.button.x;
-				lasty = event2.button.y;
-				return 1;
-			case SDL_MOUSEWHEEL:
-				if (event2.wheel.y == 0) break;
-				event->button.type = SDL1_MOUSEBUTTONDOWN;
-				event->button.which = 0;
-				event->button.button = (event2.wheel.y > 0) ? SDL1_BUTTON_WHEELUP : SDL1_BUTTON_WHEELDOWN;
-				event->button.state = SDL1_PRESSED;
-				event->button.x = lastx;
-				event->button.y = lasty;
-				inject_event.button = event->button;
-				inject_event.button.type = SDL1_MOUSEBUTTONUP;
-				inject_event.button.state = SDL1_RELEASED;
-				return 1;
-			case SDL_QUIT:
-				event->quit.type = SDL1_QUIT;
-				return 1;
-			default:
-				break;
+}
+
+static int cut_event (int i) {
+	int here, next;
+	if (i == event_queue.head) {
+		event_queue.head = (event_queue.head + 1) % MAXEVENTS;
+		return event_queue.head;
+	} else if ((i + 1) % MAXEVENTS == event_queue.tail) {
+		event_queue.tail = i;
+		return event_queue.tail;
+	} else {
+		if (--event_queue.tail < 0) event_queue.tail = MAXEVENTS - 1;
+		for (here = i; here != event_queue.tail; here = next) {
+			next = (here + 1) % MAXEVENTS;
+			event_queue.event[here] = event_queue.event[next];
 		}
+		return i;
 	}
-	return 0;
 }
 
 typedef enum {
@@ -833,29 +770,171 @@ typedef enum {
 } SDL1_eventaction;
 
 int SDLCALL SDL_PeepEvents (SDL1_Event *events, int numevents, SDL1_eventaction action, Uint32 mask) {
-	(void)events;
-	(void)numevents;
-	(void)action;
-	(void)mask;
+	SDL1_Event tmpevent;
+	int i, used = 0;
+	if (action == SDL1_ADDEVENT) {
+		for (i = 0; i < numevents; i++)
+			used += add_event(&events[i]);
+	} else {
+		if (!events) {
+			action = SDL1_PEEKEVENT;
+			numevents = 1;
+			events = &tmpevent;
+		}
+		i = event_queue.head;
+		while ((used < numevents) && (i != event_queue.tail)) {
+			if (mask & SDL1_EVENTMASK(event_queue.event[i].type)) {
+				events[used++] = event_queue.event[i];
+				if (action == SDL1_GETEVENT) i = cut_event(i);
+				else i = (i + 1) % MAXEVENTS;
+			} else {
+				i = (i + 1) % MAXEVENTS;
+			}
+		}
+	}
+	return used;
+}
+
+int SDLCALL SDL_PushEvent(SDL1_Event *event) {
+	if (SDL_PeepEvents(event, 1, SDL1_ADDEVENT, 0) <= 0) return -1;
 	return 0;
 }
 
-int SDL_WaitEvent (SDL1_Event *event) {
+typedef int (SDLCALL *SDL1_EventFilter)(const SDL1_Event *event);
+static SDL1_EventFilter event_filter = NULL;
+
+void SDLCALL SDL_SetEventFilter (SDL1_EventFilter filter) {
+	event_filter = filter;
+}
+
+SDL1_EventFilter SDL_GetEventFilter (void) {
+	return event_filter;
+}
+
+static void add_event_filtered (SDL1_Event *event) {
+	if (!event_filter || event_filter(event)) SDL_PushEvent(event);
+}
+
+void SDLCALL SDL_PumpEvents (void) {
+	SDL1_Event event;
+	SDL_Event event2;
+	while (rSDL_PollEvent(&event2)) {
+		switch (event2.type) {
+			case SDL_WINDOWEVENT:
+				event.active.type = SDL1_ACTIVEEVENT;
+				switch (event2.window.event) {
+					case SDL_WINDOWEVENT_MINIMIZED:
+						event.active.gain = 0;
+						event.active.state = SDL1_APPACTIVE;
+						update_active(&event.active);
+						add_event_filtered(&event);
+						break;
+					case SDL_WINDOWEVENT_MAXIMIZED:
+					case SDL_WINDOWEVENT_RESTORED:
+						event.active.gain = 1;
+						event.active.state = SDL1_APPACTIVE;
+						update_active(&event.active);
+						add_event_filtered(&event);
+						break;
+					case SDL_WINDOWEVENT_ENTER:
+						event.active.gain = 1;
+						event.active.state = SDL1_APPMOUSEFOCUS;
+						update_active(&event.active);
+						add_event_filtered(&event);
+						break;
+					case SDL_WINDOWEVENT_LEAVE:
+						event.active.gain = 0;
+						event.active.state = SDL1_APPMOUSEFOCUS;
+						update_active(&event.active);
+						add_event_filtered(&event);
+						break;
+					case SDL_WINDOWEVENT_FOCUS_GAINED:
+						event.active.gain = 1;
+						event.active.state = SDL1_APPINPUTFOCUS;
+						update_active(&event.active);
+						add_event_filtered(&event);
+						break;
+					case SDL_WINDOWEVENT_FOCUS_LOST:
+						event.active.gain = 0;
+						event.active.state = SDL1_APPINPUTFOCUS;
+						update_active(&event.active);
+						add_event_filtered(&event);
+						break;
+					default:
+						break;
+				}
+				break;
+			case SDL_KEYDOWN:
+			case SDL_KEYUP:
+				if (!key_delay && event2.key.repeat) break;
+				event.key.type = (event2.type == SDL_KEYDOWN) ? SDL1_KEYDOWN : SDL1_KEYUP;
+				event.key.which = 0;
+				event.key.state = event2.key.state;
+				event.key.keysym = keysym2to1(event2.key.keysym);
+				key_state[event.key.keysym.sym] = event.key.state;
+				add_event_filtered(&event);
+				break;
+			case SDL_MOUSEMOTION:
+				event.motion.type = SDL1_MOUSEMOTION;
+				event.motion.which = 0;
+				event.motion.state = mousestate2to1(event2.motion.state);
+				event.motion.x = event2.motion.x;
+				event.motion.y = event2.motion.y;
+				event.motion.xrel = event2.motion.xrel;
+				event.motion.yrel = event2.motion.yrel;
+				lastx = event2.motion.x;
+				lasty = event2.motion.y;
+				add_event_filtered(&event);
+				break;
+			case SDL_MOUSEBUTTONDOWN:
+			case SDL_MOUSEBUTTONUP:
+				event.button.type = (event2.type == SDL_MOUSEBUTTONDOWN) ? SDL1_MOUSEBUTTONDOWN : SDL1_MOUSEBUTTONUP;
+				event.button.which = 0;
+				event.button.button = mousebutton2to1(event2.button.button);
+				event.button.state = (event2.button.state == SDL_PRESSED) ? SDL1_PRESSED : SDL1_RELEASED;
+				event.button.x = event2.button.x;
+				event.button.y = event2.button.y;
+				lastx = event2.button.x;
+				lasty = event2.button.y;
+				add_event_filtered(&event);
+				break;
+			case SDL_MOUSEWHEEL:
+				if (event2.wheel.y == 0) break;
+				event.button.type = SDL1_MOUSEBUTTONDOWN;
+				event.button.which = 0;
+				event.button.button = (event2.wheel.y > 0) ? SDL1_BUTTON_WHEELUP : SDL1_BUTTON_WHEELDOWN;
+				event.button.state = SDL1_PRESSED;
+				event.button.x = lastx;
+				event.button.y = lasty;
+				add_event_filtered(&event);
+				event.button = event.button;
+				event.button.type = SDL1_MOUSEBUTTONUP;
+				event.button.state = SDL1_RELEASED;
+				add_event_filtered(&event);
+				break;
+			case SDL_QUIT:
+				event.quit.type = SDL1_QUIT;
+				add_event_filtered(&event);
+				break;
+			default:
+				break;
+		}
+	}
+}
+
+int SDLCALL SDL_PollEvent (SDL1_Event *event) {
+	SDL_PumpEvents();
+	if (SDL_PeepEvents(event, 1, SDL1_GETEVENT, SDL1_ALLEVENTS) <= 0) return 0;
+	return 1;
+}
+
+int SDLCALL SDL_WaitEvent (SDL1_Event *event) {
 	while (rSDL_WaitEvent(NULL)) {
 		if (SDL_PollEvent(event)) return 1;
 	}
 	return 0;
 }
 
-void SDLCALL SDL_PumpEvents (void) {
-	rSDL_PumpEvents();
-}
-
 Uint8 SDLCALL SDL_GetAppState (void) {
 	return active_map;
-}
-
-int SDLCALL SDL_PushEvent(SDL1_Event *event) {
-	(void)event;
-	return 0;
 }
