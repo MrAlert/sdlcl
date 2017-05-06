@@ -41,6 +41,8 @@ static void *lib = NULL;
 #include "symbols.x"
 #undef SDL2_SYMBOL
 
+static void load_error (const char *symbol);
+
 __attribute__ ((destructor)) static void quitlib (void) {
 	if (lib) {
 		dlclose(lib);
@@ -54,12 +56,16 @@ __attribute__ ((destructor)) static void quitlib (void) {
 
 __attribute__ ((constructor)) static void initlib (void) {
 	if (!lib) {
-		lib = dlopen("libSDL2-2.0.so.0", RTLD_LAZY);
-		if (!lib) return;
+		lib = dlopen("libSDL2-2.0.so.0", RTLD_LAZY | RTLD_LOCAL);
+		if (!lib) {
+			load_error(NULL);
+			return;
+		}
 #define SDL2_SYMBOL(name, ret, param) \
 		r##name = dlsym(lib, #name); \
 		if (!r##name) { \
 			quitlib(); \
+			load_error(#name); \
 			return; \
 		}
 #include "symbols.x"
@@ -115,27 +121,48 @@ typedef enum {
 } SDL1_errorcode;
 
 #define ERRBUF_SIZE 1024
+static char errbuf[ERRBUF_SIZE];
+
 char *SDLCALL SDL_GetError (void) {
-	static char errbuf[ERRBUF_SIZE];
-	static const char *err;
 	if (lib) {
-		err = rSDL_GetError();
-	} else {
-		err = "Error loading SDL2";
+		strncpy(errbuf, rSDL_GetError(), ERRBUF_SIZE);
+		errbuf[ERRBUF_SIZE - 1] = 0;
 	}
-	strncpy(errbuf, err, ERRBUF_SIZE);
-	errbuf[ERRBUF_SIZE - 1] = 0;
 	return errbuf;
 }
 
-/* TODO: Implement these error-setting functions */
 void SDLCALL SDL_SetError (const char *fmt, ...) {
-	(void)fmt;
+	char err[ERRBUF_SIZE];
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(err, ERRBUF_SIZE, fmt, ap);
+	va_end(ap);
+	if (lib) rSDL_SetError("%s", err);
+	else strcpy(errbuf, err);
 }
 
 void SDLCALL SDL_ClearError (void) {
+	if (lib) rSDL_ClearError();
+	else errbuf[0] = 0;
 }
 
 void SDLCALL SDL_Error (SDL1_errorcode code) {
-	(void)code;
+	SDL_errorcode code2;
+	switch (code) {
+		case SDL1_ENOMEM: code2 = SDL_ENOMEM; break;
+		case SDL1_EFREAD: code2 = SDL_EFREAD; break;
+		case SDL1_EFWRITE: code2 = SDL_EFWRITE; break;
+		case SDL1_EFSEEK: code2 = SDL_EFSEEK; break;
+		case SDL1_UNSUPPORTED:
+		default:
+			code2 = SDL1_UNSUPPORTED;
+			break;
+	}
+	if (lib) rSDL_Error(code2);
+	else SDL_SetError("SDL error code %d", (int)code);
+}
+
+static void load_error (const char *symbol) {
+	if (symbol) SDL_SetError("Error loading SDL2 symbol %s", symbol);
+	else SDL_SetError("Error loading SDL2: %s", dlerror());
 }
