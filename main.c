@@ -37,9 +37,35 @@
 
 static void *lib = NULL;
 
-#define SDL2_SYMBOL(name, ret, param) ret (SDLCALL *r##name) param __attribute__ ((visibility ("hidden")));
+#define SDL2_SYMBOL(name, ret, param) ret (SDLCALL *r##name) param __attribute__ ((visibility ("hidden"))) = NULL;
 #include "symbols.x"
 #undef SDL2_SYMBOL
+
+__attribute__ ((destructor)) static void quitlib (void) {
+	if (lib) {
+		dlclose(lib);
+		lib = NULL;
+#define SDL2_SYMBOL(name, ret, param) \
+		r##name = NULL;
+#include "symbols.x"
+#undef SDL2_SYMBOL
+	}
+}
+
+__attribute__ ((constructor)) static void initlib (void) {
+	if (!lib) {
+		lib = dlopen("libSDL2-2.0.so.0", RTLD_LAZY);
+		if (!lib) return;
+#define SDL2_SYMBOL(name, ret, param) \
+		r##name = dlsym(lib, #name); \
+		if (!r##name) { \
+			quitlib(); \
+			return; \
+		}
+#include "symbols.x"
+#undef SDL2_SYMBOL
+	}
+}
 
 static Uint32 initflags1to2 (Uint32 flags) {
 	Uint32 flags2 = 0;
@@ -50,43 +76,22 @@ static Uint32 initflags1to2 (Uint32 flags) {
 	return flags2;
 }
 
-static int initlib (void) {
-	if (!lib) {
-		lib = dlopen("libSDL2-2.0.so.0", RTLD_LAZY);
-		if (!lib) return -1;
-#define SDL2_SYMBOL(name, ret, param) \
-		r##name = dlsym(lib, #name); \
-		if (!r##name) { \
-			dlclose(lib); \
-			lib = NULL; \
-			return -1; \
-		}
-#include "symbols.x"
-#undef SDL2_SYMBOL
-	}
-	return 0;
-}
-
 int SDLCALL SDL_Init (Uint32 flags) {
-	if (initlib()) return -1;
+	if (!lib) return -1;
 	return rSDL_Init(initflags1to2(flags));
 }
 
 int SDLCALL SDL_InitSubSystem (Uint32 flags) {
-	if (initlib()) return -1;
+	if (!lib) return -1;
 	return rSDL_InitSubSystem(initflags1to2(flags));
 }
 
 void SDLCALL SDL_QuitSubSystem (Uint32 flags) {
-	rSDL_QuitSubSystem(initflags1to2(flags));
+	if (lib) rSDL_QuitSubSystem(initflags1to2(flags));
 }
 
 void SDLCALL SDL_Quit (void) {
-	if (lib) {
-		rSDL_Quit();
-		dlclose(lib);
-		lib = NULL;
-	}
+	if (lib) rSDL_Quit();
 }
 
 Uint32 SDLCALL SDL_WasInit (Uint32 flags) {
@@ -116,7 +121,7 @@ char *SDLCALL SDL_GetError (void) {
 	if (lib) {
 		err = rSDL_GetError();
 	} else {
-		err = "Error loading SDL";
+		err = "Error loading SDL2";
 	}
 	strncpy(errbuf, err, ERRBUF_SIZE);
 	errbuf[ERRBUF_SIZE - 1] = 0;
