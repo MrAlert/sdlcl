@@ -155,7 +155,7 @@ void SDLCALL SDL_Error (SDL1_errorcode code) {
 		case SDL1_EFSEEK: code2 = SDL_EFSEEK; break;
 		case SDL1_UNSUPPORTED:
 		default:
-			code2 = SDL1_UNSUPPORTED;
+			code2 = SDL_UNSUPPORTED;
 			break;
 	}
 	if (lib) rSDL_Error(code2);
