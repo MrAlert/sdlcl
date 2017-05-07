@@ -880,7 +880,7 @@ static void push_text (const char *text) {
 	Uint32 state = 0;
 	Uint32 codepoint;
 	while (*text) {
-		if (utf8_decode(&state, &codepoint, *(text++))) continue;
+		if (utf8_decode(&state, &codepoint, *((Uint8 *)(text++)))) continue;
 		if (codepoint > 0xFFFF) {
 			push_unicode(0xD7C0 + (codepoint >> 10));
 			push_unicode(0xDC00 + (codepoint & 0x3FF));
