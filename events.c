@@ -35,6 +35,10 @@ int SDLCALL SDL_EnableUNICODE (int enable) {
 		default:
 			break;
 	}
+	if (unicode != oldunicode) {
+		if (unicode) rSDL_StartTextInput();
+		else rSDL_StopTextInput();
+	}
 	return oldunicode;
 }
 
@@ -816,8 +820,68 @@ SDL1_EventFilter SDLCALL SDL_GetEventFilter (void) {
 	return event_filter;
 }
 
+#define MAXUNICODE 128
+static struct {
+	int head;
+	int tail;
+	Uint16 unicode[MAXUNICODE];
+} unicode_queue = { 0, 0 , { 0 }};
+
+static SDL1_Event unicode_event = { SDL1_NOEVENT };
+
 static void add_event_filtered (SDL1_Event *event) {
 	if (!event_filter || event_filter(event)) SDL_PushEvent(event);
+}
+
+static void push_unicode (const char *text) {
+	int tail;
+	/* TODO: Interpret UTF-8 */
+	while (*text) {
+		tail = (unicode_queue.tail + 1) % MAXUNICODE;
+		if (tail == unicode_queue.head) break;
+		unicode_queue.unicode[unicode_queue.tail] = *(text++);
+		unicode_queue.tail = tail;
+	}
+}
+
+static int pull_unicode (SDL1_Event *event) {
+	if (unicode_queue.head != unicode_queue.tail) {
+		event->key.keysym.unicode = unicode_queue.unicode[unicode_queue.head];
+		unicode_queue.head = (unicode_queue.head + 1) % MAXUNICODE;
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+static void flush_unicode (void) {
+	SDL1_Event event;
+	if (unicode_event.type != SDL1_NOEVENT) {
+		pull_unicode(&unicode_event);
+		add_event_filtered(&unicode_event);
+		unicode_event.type = SDL1_NOEVENT;
+	}
+	event.key.type = SDL1_KEYDOWN;
+	event.key.which = 0;
+	event.key.state = SDL1_PRESSED;
+	event.key.keysym.scancode = 0;
+	event.key.keysym.sym = SDLK1_UNKNOWN;
+	event.key.keysym.mod = KMOD1_NONE;
+	while (unicode_queue.head != unicode_queue.tail) {
+		event.key.keysym.unicode = unicode_queue.unicode[unicode_queue.head];
+		unicode_queue.head = (unicode_queue.head + 1) % MAXUNICODE;
+		add_event_filtered(&event);
+	}
+}
+
+static void process_event (SDL1_Event *event) {
+	flush_unicode();
+	if (event->type == SDL1_KEYDOWN) {
+		if (pull_unicode(event)) add_event_filtered(event);
+		else unicode_event = *event;
+	} else {
+		add_event_filtered(event);
+	}
 }
 
 void SDLCALL SDL_PumpEvents (void) {
@@ -837,38 +901,38 @@ void SDLCALL SDL_PumpEvents (void) {
 						event.active.gain = 0;
 						event.active.state = SDL1_APPACTIVE;
 						update_active(&event.active);
-						add_event_filtered(&event);
+						process_event(&event);
 						break;
 					case SDL_WINDOWEVENT_MAXIMIZED:
 					case SDL_WINDOWEVENT_RESTORED:
 						event.active.gain = 1;
 						event.active.state = SDL1_APPACTIVE;
 						update_active(&event.active);
-						add_event_filtered(&event);
+						process_event(&event);
 						break;
 					case SDL_WINDOWEVENT_ENTER:
 						event.active.gain = 1;
 						event.active.state = SDL1_APPMOUSEFOCUS;
 						update_active(&event.active);
-						add_event_filtered(&event);
+						process_event(&event);
 						break;
 					case SDL_WINDOWEVENT_LEAVE:
 						event.active.gain = 0;
 						event.active.state = SDL1_APPMOUSEFOCUS;
 						update_active(&event.active);
-						add_event_filtered(&event);
+						process_event(&event);
 						break;
 					case SDL_WINDOWEVENT_FOCUS_GAINED:
 						event.active.gain = 1;
 						event.active.state = SDL1_APPINPUTFOCUS;
 						update_active(&event.active);
-						add_event_filtered(&event);
+						process_event(&event);
 						break;
 					case SDL_WINDOWEVENT_FOCUS_LOST:
 						event.active.gain = 0;
 						event.active.state = SDL1_APPINPUTFOCUS;
 						update_active(&event.active);
-						add_event_filtered(&event);
+						process_event(&event);
 						break;
 					default:
 						break;
@@ -882,7 +946,10 @@ void SDLCALL SDL_PumpEvents (void) {
 				event.key.state = event2.key.state;
 				event.key.keysym = keysym2to1(event2.key.keysym);
 				key_state[event.key.keysym.sym] = event.key.state;
-				add_event_filtered(&event);
+				process_event(&event);
+				break;
+			case SDL_TEXTINPUT:
+				push_unicode(event2.text.text);
 				break;
 			case SDL_MOUSEMOTION:
 				event.motion.type = SDL1_MOUSEMOTION;
@@ -894,7 +961,7 @@ void SDLCALL SDL_PumpEvents (void) {
 				event.motion.yrel = event2.motion.yrel;
 				lastx = event2.motion.x;
 				lasty = event2.motion.y;
-				add_event_filtered(&event);
+				process_event(&event);
 				break;
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEBUTTONUP:
@@ -906,7 +973,7 @@ void SDLCALL SDL_PumpEvents (void) {
 				event.button.y = event2.button.y;
 				lastx = event2.button.x;
 				lasty = event2.button.y;
-				add_event_filtered(&event);
+				process_event(&event);
 				break;
 			case SDL_MOUSEWHEEL:
 				if (event2.wheel.y == 0) break;
@@ -916,20 +983,21 @@ void SDLCALL SDL_PumpEvents (void) {
 				event.button.state = SDL1_PRESSED;
 				event.button.x = lastx;
 				event.button.y = lasty;
-				add_event_filtered(&event);
+				process_event(&event);
 				event.button = event.button;
 				event.button.type = SDL1_MOUSEBUTTONUP;
 				event.button.state = SDL1_RELEASED;
-				add_event_filtered(&event);
+				process_event(&event);
 				break;
 			case SDL_QUIT:
 				event.quit.type = SDL1_QUIT;
-				add_event_filtered(&event);
+				process_event(&event);
 				break;
 			default:
 				break;
 		}
 	}
+	flush_unicode();
 }
 
 int SDLCALL SDL_PollEvent (SDL1_Event *event) {
