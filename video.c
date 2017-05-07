@@ -1091,7 +1091,7 @@ int SDLCALL SDL_GetWMInfo (SDL1_SysWMinfo *info) {
 				info->info.x11.wmwindow = 0;
 			}
 			if (compare_ver(info->version, 1, 2, 12))
-				info->info.x11.gfxdisplay = NULL;
+				info->info.x11.gfxdisplay = info2.info.x11.display;
 			return 1;
 		}
 #endif
