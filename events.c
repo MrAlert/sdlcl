@@ -833,14 +833,60 @@ static void add_event_filtered (SDL1_Event *event) {
 	if (!event_filter || event_filter(event)) SDL_PushEvent(event);
 }
 
-static void push_unicode (const char *text) {
+/* Copyright (c) 2008-2010 Bjoern Hoehrmann <bjoern@hoehrmann.de> */
+/* See http://bjoern.hoehrmann.de/utf-8/decoder/dfa/ for details. */
+
+#define UTF8_ACCEPT 0
+#define UTF8_REJECT 12
+
+static const Uint8 utf8d[] = {
+	/* The first part of the table maps bytes to character classes that */
+	/* to reduce the size of the transition table and create bitmasks. */
+	 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+	 7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,  7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+	 8,8,2,2,2,2,2,2,2,2,2,2,2,2,2,2,  2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+	10,3,3,3,3,3,3,3,3,3,3,3,3,4,3,3, 11,6,6,6,5,8,8,8,8,8,8,8,8,8,8,8,
+	/* The second part is a transition table that maps a combination */
+	/* of a state of the automaton and a character class to a state. */
+	 0,12,24,36,60,96,84,12,12,12,48,72, 12,12,12,12,12,12,12,12,12,12,12,12,
+	12, 0,12,12,12,12,12, 0,12, 0,12,12, 12,24,12,12,12,12,12,24,12,24,12,12,
+	12,12,12,12,12,12,12,24,12,12,12,12, 12,24,12,12,12,12,12,12,12,24,12,12,
+	12,12,12,12,12,12,12,36,12,36,12,12, 12,36,12,12,12,12,12,36,12,36,12,12,
+	12,36,12,12,12,12,12,12,12,12,12,12, 
+};
+
+static Uint32 utf8_decode (Uint32 *state, Uint32 *codep, Uint32 byte) {
+	Uint32 type = utf8d[byte];
+	*codep = (*state != UTF8_ACCEPT) ?
+		(byte & 0x3fu) | (*codep << 6) :
+		(0xff >> type) & (byte);
+	*state = utf8d[256 + *state + type];
+	return *state;
+}
+
+static void push_unicode (Uint16 unicode) {
 	int tail;
-	/* TODO: Interpret UTF-8 */
+	tail = (unicode_queue.tail + 1) % MAXUNICODE;
+	if (tail == unicode_queue.head) return;
+	unicode_queue.unicode[unicode_queue.tail] = unicode;
+	unicode_queue.tail = tail;
+}
+
+static void push_text (const char *text) {
+	Uint32 state = 0;
+	Uint32 codepoint;
 	while (*text) {
-		tail = (unicode_queue.tail + 1) % MAXUNICODE;
-		if (tail == unicode_queue.head) break;
-		unicode_queue.unicode[unicode_queue.tail] = *(text++);
-		unicode_queue.tail = tail;
+		if (utf8_decode(&state, &codepoint, *(text++))) continue;
+		if (codepoint > 0xFFFF) {
+			push_unicode(0xD7C0 + (codepoint >> 10));
+			push_unicode(0xDC00 + (codepoint & 0x3FF));
+		} else {
+			push_unicode(codepoint);
+		}
 	}
 }
 
@@ -949,7 +995,7 @@ void SDLCALL SDL_PumpEvents (void) {
 				process_event(&event);
 				break;
 			case SDL_TEXTINPUT:
-				push_unicode(event2.text.text);
+				push_text(event2.text.text);
 				break;
 			case SDL_MOUSEMOTION:
 				event.motion.type = SDL1_MOUSEMOTION;
