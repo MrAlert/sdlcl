@@ -35,6 +35,7 @@ SDL2_SYMBOL(SDL_GetTicks, Uint32, (void))
 SDL2_SYMBOL(SDL_Delay, void, (Uint32 ms))
 
 /* Video subsystem */
+SDL2_SYMBOL(SDL_GetCurrentVideoDriver, const char *, (void))
 SDL2_SYMBOL(SDL_GetNumVideoDisplays, int, (void))
 SDL2_SYMBOL(SDL_GetNumDisplayModes, int, (int displayIndex))
 SDL2_SYMBOL(SDL_GetDisplayMode, int, (int displayIndex, int modeIndex, SDL_DisplayMode *mode))

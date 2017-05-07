@@ -484,6 +484,16 @@ SDL1_VideoInfo *SDLCALL SDL_GetVideoInfo (void) {
 	return &video_info;
 }
 
+char *SDLCALL SDL_VideoDriverName (char *namebuf, int maxlen) {
+	const char *name = rSDL_GetCurrentVideoDriver();
+	if (!name) return NULL;
+	if (maxlen) {
+		strncpy(namebuf, name, maxlen);
+		namebuf[maxlen - 1] = 0;
+	}
+	return namebuf;
+}
+
 #define SDL_WINDOW_INVALID ((Uint32)-1)
 
 static Uint32 vidflags1to2 (Uint32 flags) {
