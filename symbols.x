@@ -29,6 +29,7 @@ SDL2_SYMBOL(SDL_Error, int, (SDL_errorcode code))
 SDL2_SYMBOL(SDL_QuitSubSystem, void, (Uint32 flags))
 SDL2_SYMBOL(SDL_Quit, void, (void))
 SDL2_SYMBOL(SDL_WasInit, Uint32, (Uint32 flags))
+SDL2_SYMBOL(SDL_SetHint, SDL_bool, (const char *name, const char *value))
 
 /* Timer subsystem */
 SDL2_SYMBOL(SDL_GetTicks, Uint32, (void))
@@ -42,6 +43,7 @@ SDL2_SYMBOL(SDL_GetDisplayMode, int, (int displayIndex, int modeIndex, SDL_Displ
 SDL2_SYMBOL(SDL_GetDesktopDisplayMode, int, (int displayIndex, SDL_DisplayMode *mode))
 SDL2_SYMBOL(SDL_GetPixelFormatName, const char *, (Uint32 format))
 SDL2_SYMBOL(SDL_CreateWindow, SDL_Window *, (const char *title, int x, int y, int w, int h, Uint32 flags))
+SDL2_SYMBOL(SDL_GetWindowSize, void, (SDL_Window *window, int *w, int *h))
 SDL2_SYMBOL(SDL_DestroyWindow, void, (SDL_Window *window))
 
 SDL2_SYMBOL(SDL_CreateRGBSurface, SDL_Surface *, (Uint32 flags, int width, int height, int depth, Uint32 Rmask, Uint32 Gmask, Uint32 Bmask, Uint32 Amask))
@@ -103,6 +105,7 @@ SDL2_SYMBOL(SDL_GL_SwapWindow, void, (SDL_Window *window))
 SDL2_SYMBOL(SDL_GL_SetAttribute, int, (SDL_GLattr attr, int value))
 SDL2_SYMBOL(SDL_GL_GetAttribute, int, (SDL_GLattr attr, int *value))
 SDL2_SYMBOL(SDL_GL_CreateContext, SDL_GLContext, (SDL_Window *window))
+SDL2_SYMBOL(SDL_GL_MakeCurrent, int, (SDL_Window *window, SDL_GLContext context))
 SDL2_SYMBOL(SDL_GL_DeleteContext, void, (SDL_GLContext context))
 
 SDL2_SYMBOL(SDL_GetWindowWMInfo, SDL_bool, (SDL_Window *window, SDL_SysWMinfo *info))
