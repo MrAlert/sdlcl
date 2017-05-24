@@ -778,7 +778,7 @@ static void gl_scale (void) {
 
 SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp, Uint32 flags) {
 	Uint32 Rmask, Gmask, Bmask, Amask;
-	Uint32 pixfmt = SDL_PIXELFORMAT_RGBX8888;
+	Uint32 pixfmt = SDL_PIXELFORMAT_ARGB8888;
 	Uint32 flags2 = vidflags1to2(flags);
 	int tbpp;
 	(void)width;
@@ -791,7 +791,7 @@ SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp, Uint32 f
 			case 15: pixfmt = SDL_PIXELFORMAT_RGB555; break;
 			case 16: pixfmt = SDL_PIXELFORMAT_RGB565; break;
 			case 24: pixfmt = SDL_PIXELFORMAT_RGB888; break;
-			case 32: pixfmt = SDL_PIXELFORMAT_RGBX8888; break;
+			case 32: pixfmt = SDL_PIXELFORMAT_ARGB8888; break;
 			default: return NULL;
 		}
 	}
@@ -823,8 +823,8 @@ SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp, Uint32 f
 		if (bpp > 8) {
 			main_texture = rSDL_CreateTexture(main_renderer, pixfmt, SDL_TEXTUREACCESS_STREAMING, width, height);
 		} else {
-			main_texture = rSDL_CreateTexture(main_renderer, SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STREAMING, width, height);
-			rSDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_RGBX8888,
+			main_texture = rSDL_CreateTexture(main_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+			rSDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_ARGB8888,
 				&tbpp,
 				&texture_format.Rmask,
 				&texture_format.Gmask,
@@ -944,7 +944,7 @@ SDL1_Surface *SDL_DisplayFormatAlpha (SDL1_Surface *surface) {
 	int depth;
 	Uint32 Rmask, Gmask, Bmask, Amask;
 	SDL1_Surface *dst;
-	rSDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_RGBA8888, &depth, &Rmask, &Gmask, &Bmask, &Amask);
+	rSDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_ARGB8888, &depth, &Rmask, &Gmask, &Bmask, &Amask);
 	dst = SDL_CreateRGBSurface(0, surface->w, surface->h, depth, Rmask, Gmask, Bmask, Amask);
 	if (!dst) return NULL;
 	convert_surface_dst(surface, dst);
