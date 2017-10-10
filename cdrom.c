@@ -54,26 +54,26 @@ typedef struct SDL1_CD {
 	SDL1_CDtrack track[SDL1_MAX_TRACKS + 1];
 } SDL1_CD;
 
-int SDLCALL SDL_CDNumDrives (void) {
+DECLSPEC int SDLCALL SDL_CDNumDrives (void) {
 	return 0;
 }
 
-const char *SDLCALL SDL_CDName (int drive) {
+DECLSPEC const char *SDLCALL SDL_CDName (int drive) {
 	(void)drive;
 	return NULL;
 }
 
-SDL1_CD *SDLCALL SDL_CDOpen (int drive) {
+DECLSPEC SDL1_CD *SDLCALL SDL_CDOpen (int drive) {
 	(void)drive;
 	return NULL;
 }
 
-CD1status SDLCALL SDL_CDStatus (SDL1_CD *cdrom) {
+DECLSPEC CD1status SDLCALL SDL_CDStatus (SDL1_CD *cdrom) {
 	(void)cdrom;
 	return CD1_ERROR;
 }
 
-int SDLCALL SDL_CDPlayTracks (SDL1_CD *cdrom, int start_track, int start_frame, int ntracks, int nframes) {
+DECLSPEC int SDLCALL SDL_CDPlayTracks (SDL1_CD *cdrom, int start_track, int start_frame, int ntracks, int nframes) {
 	(void)cdrom;
 	(void)start_track;
 	(void)start_frame;
@@ -82,33 +82,33 @@ int SDLCALL SDL_CDPlayTracks (SDL1_CD *cdrom, int start_track, int start_frame, 
 	return -1;
 }
 
-int SDLCALL SDL_CDPlay (SDL1_CD *cdrom, int start, int length) {
+DECLSPEC int SDLCALL SDL_CDPlay (SDL1_CD *cdrom, int start, int length) {
 	(void)cdrom;
 	(void)start;
 	(void)length;
 	return -1;
 }
 
-int SDLCALL SDL_CDPause (SDL1_CD *cdrom) {
+DECLSPEC int SDLCALL SDL_CDPause (SDL1_CD *cdrom) {
 	(void)cdrom;
 	return -1;
 }
 
-int SDLCALL SDL_CDResume (SDL1_CD *cdrom) {
+DECLSPEC int SDLCALL SDL_CDResume (SDL1_CD *cdrom) {
 	(void)cdrom;
 	return -1;
 }
 
-int SDLCALL SDL_CDStop (SDL1_CD *cdrom) {
+DECLSPEC int SDLCALL SDL_CDStop (SDL1_CD *cdrom) {
 	(void)cdrom;
 	return -1;
 }
 
-int SDLCALL SDL_CDEject (SDL1_CD *cdrom) {
+DECLSPEC int SDLCALL SDL_CDEject (SDL1_CD *cdrom) {
 	(void)cdrom;
 	return -1;
 }
 
-void SDLCALL SDL_CDClose (SDL1_CD *cdrom) {
+DECLSPEC void SDLCALL SDL_CDClose (SDL1_CD *cdrom) {
 	(void)cdrom;
 }

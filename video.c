@@ -207,7 +207,7 @@ static void update_surface_blend (SDL1_Surface *surface) {
 	surface->offset = SDL_MUSTLOCK(surface->sdl2_surface);
 }
 
-SDL1_Surface *SDLCALL SDL_CreateRGBSurface (Uint32 flags, int width, int height, int depth, Uint32 Rmask, Uint32 Gmask, Uint32 Bmask, Uint32 Amask) {
+DECLSPEC SDL1_Surface *SDLCALL SDL_CreateRGBSurface (Uint32 flags, int width, int height, int depth, Uint32 Rmask, Uint32 Gmask, Uint32 Bmask, Uint32 Amask) {
 	SDL_Surface *surface2;
 	SDL1_Surface *surface;
 	if (Amask) flags |= SDL1_SRCALPHA;
@@ -223,7 +223,7 @@ SDL1_Surface *SDLCALL SDL_CreateRGBSurface (Uint32 flags, int width, int height,
 	return surface;
 }
 
-SDL1_Surface *SDLCALL SDL_CreateRGBSurfaceFrom (void *pixels, int width, int height, int depth, int pitch, Uint32 Rmask, Uint32 Gmask, Uint32 Bmask, Uint32 Amask) {
+DECLSPEC SDL1_Surface *SDLCALL SDL_CreateRGBSurfaceFrom (void *pixels, int width, int height, int depth, int pitch, Uint32 Rmask, Uint32 Gmask, Uint32 Bmask, Uint32 Amask) {
 	SDL_Surface *surface2;
 	SDL1_Surface *surface;
 	surface2 = rSDL_CreateRGBSurfaceFrom(pixels, width, height, depth, pitch, Rmask, Gmask, Bmask, Amask);
@@ -236,25 +236,25 @@ SDL1_Surface *SDLCALL SDL_CreateRGBSurfaceFrom (void *pixels, int width, int hei
 	return surface;
 }
 
-int SDLCALL SDL_SetAlpha (SDL1_Surface *surface, Uint32 flag, Uint8 alpha) {
+DECLSPEC int SDLCALL SDL_SetAlpha (SDL1_Surface *surface, Uint32 flag, Uint8 alpha) {
 	surface->flags = (surface->flags & ~(SDL1_SRCALPHA | SDL1_RLEACCEL)) | (flag & (SDL1_SRCALPHA | SDL1_RLEACCEL));
 	surface->format->alpha = alpha;
 	update_surface_blend(surface);
 	return 0;
 }
 
-int SDLCALL SDL_SetColorKey (SDL1_Surface *surface, Uint32 flag, Uint32 key) {
+DECLSPEC int SDLCALL SDL_SetColorKey (SDL1_Surface *surface, Uint32 flag, Uint32 key) {
 	surface->flags = (surface->flags & ~(SDL1_SRCCOLORKEY | SDL1_RLEACCEL)) | (flag & (SDL1_SRCCOLORKEY | SDL1_RLEACCEL));
 	surface->format->colorkey = key;
 	update_surface_blend(surface);
 	return 0;
 }
 
-void SDL_GetClipRect (SDL1_Surface *surface, SDL1_Rect *rect) {
+DECLSPEC void SDL_GetClipRect (SDL1_Surface *surface, SDL1_Rect *rect) {
 	*rect = surface->clip_rect;
 }
 
-void SDL_SetClipRect (SDL1_Surface *surface, SDL1_Rect *rect) {
+DECLSPEC void SDL_SetClipRect (SDL1_Surface *surface, SDL1_Rect *rect) {
 	SDL_Rect rect2, *rectptr = NULL;
 	if (rect) {
 		rect2.x = rect->x;
@@ -271,7 +271,7 @@ void SDL_SetClipRect (SDL1_Surface *surface, SDL1_Rect *rect) {
 	surface->clip_rect.h = rect2.h;
 }
 
-int SDLCALL SDL_FillRect (SDL1_Surface *dst, SDL1_Rect *dstrect, Uint32 color) {
+DECLSPEC int SDLCALL SDL_FillRect (SDL1_Surface *dst, SDL1_Rect *dstrect, Uint32 color) {
 	SDL_Rect rect2, *rectptr = NULL;
 	if (dstrect) {
 		rect2.x = dstrect->x;
@@ -284,7 +284,7 @@ int SDLCALL SDL_FillRect (SDL1_Surface *dst, SDL1_Rect *dstrect, Uint32 color) {
 }
 
 /* a.k.a. SDL_BlitSurface() */
-int SDLCALL SDL_UpperBlit (SDL1_Surface *src, SDL1_Rect *srcrect, SDL1_Surface *dst, SDL1_Rect *dstrect) {
+DECLSPEC int SDLCALL SDL_UpperBlit (SDL1_Surface *src, SDL1_Rect *srcrect, SDL1_Surface *dst, SDL1_Rect *dstrect) {
 	SDL_Rect srcrect2, *srcptr = NULL;
 	SDL_Rect dstrect2, *dstptr = NULL;
 	int ret;
@@ -313,7 +313,7 @@ int SDLCALL SDL_UpperBlit (SDL1_Surface *src, SDL1_Rect *srcrect, SDL1_Surface *
 	return ret;
 }
 
-int SDLCALL SDL_LowerBlit (SDL1_Surface *src, SDL1_Rect *srcrect, SDL1_Surface *dst, SDL1_Rect *dstrect) {
+DECLSPEC int SDLCALL SDL_LowerBlit (SDL1_Surface *src, SDL1_Rect *srcrect, SDL1_Surface *dst, SDL1_Rect *dstrect) {
 	SDL_Rect srcrect2, *srcptr = NULL;
 	SDL_Rect dstrect2;
 	if (srcrect) {
@@ -330,17 +330,17 @@ int SDLCALL SDL_LowerBlit (SDL1_Surface *src, SDL1_Rect *srcrect, SDL1_Surface *
 	return rSDL_LowerBlit(src->sdl2_surface, srcptr, dst->sdl2_surface, &dstrect2);
 }
 
-int SDLCALL SDL_LockSurface (SDL1_Surface *surface) {
+DECLSPEC int SDLCALL SDL_LockSurface (SDL1_Surface *surface) {
 	int ret = rSDL_LockSurface(surface->sdl2_surface);
 	surface->pixels = surface->sdl2_surface->pixels;
 	return ret;
 }
 
-void SDLCALL SDL_UnlockSurface (SDL1_Surface *surface) {
+DECLSPEC void SDLCALL SDL_UnlockSurface (SDL1_Surface *surface) {
 	rSDL_UnlockSurface(surface->sdl2_surface);
 }
 
-SDL1_Surface *SDLCALL SDL_LoadBMP_RW (SDL1_RWops *src, int freesrc) {
+DECLSPEC SDL1_Surface *SDLCALL SDL_LoadBMP_RW (SDL1_RWops *src, int freesrc) {
 	SDL1_Surface *surface;
 	SDL_Surface *surface2;
 	SDL_RWops *src2 = SDLCL_RWFromSDL1(src);
@@ -359,7 +359,7 @@ SDL1_Surface *SDLCALL SDL_LoadBMP_RW (SDL1_RWops *src, int freesrc) {
 	return surface;
 }
 
-int SDLCALL SDL_SaveBMP_RW (SDL1_Surface *surface, SDL1_RWops *dst, int freedst) {
+DECLSPEC int SDLCALL SDL_SaveBMP_RW (SDL1_Surface *surface, SDL1_RWops *dst, int freedst) {
 	int ret;
 	SDL_RWops *dst2 = SDLCL_RWFromSDL1(dst);
 	if (!dst2) return -1;
@@ -372,7 +372,7 @@ static Uint32 map_component (Uint8 v, Uint8 loss, Uint8 shift, Uint32 mask) {
 	return (((Uint32)v >> loss) << shift) & mask;
 }
 
-Uint32 SDLCALL SDL_MapRGBA (SDL1_PixelFormat *fmt, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
+DECLSPEC Uint32 SDLCALL SDL_MapRGBA (SDL1_PixelFormat *fmt, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
 	int i, dist, min, rd, gd, bd;
 	Uint32 color;
 	if (fmt->palette) {
@@ -399,7 +399,7 @@ Uint32 SDLCALL SDL_MapRGBA (SDL1_PixelFormat *fmt, Uint8 r, Uint8 g, Uint8 b, Ui
 	}
 }
 
-Uint32 SDLCALL SDL_MapRGB (SDL1_PixelFormat *fmt, Uint8 r, Uint8 g, Uint8 b) {
+DECLSPEC Uint32 SDLCALL SDL_MapRGB (SDL1_PixelFormat *fmt, Uint8 r, Uint8 g, Uint8 b) {
 	return SDL_MapRGBA(fmt, r, g, b, 255);
 }
 
@@ -413,7 +413,7 @@ static Uint8 get_component (Uint32 pixel, Uint8 loss, Uint8 shift, Uint32 mask) 
 	return v;
 }
 
-void SDLCALL SDL_GetRGBA (Uint32 pixel, SDL1_PixelFormat *fmt, Uint8 *r, Uint8 *g, Uint8 *b, Uint8 *a) {
+DECLSPEC void SDLCALL SDL_GetRGBA (Uint32 pixel, SDL1_PixelFormat *fmt, Uint8 *r, Uint8 *g, Uint8 *b, Uint8 *a) {
 	if (fmt->palette) {
 		*r = fmt->palette->colors[pixel].r;
 		*g = fmt->palette->colors[pixel].g;
@@ -428,7 +428,7 @@ void SDLCALL SDL_GetRGBA (Uint32 pixel, SDL1_PixelFormat *fmt, Uint8 *r, Uint8 *
 	}
 }
 
-void SDLCALL SDL_GetRGB (Uint32 pixel, SDL1_PixelFormat *fmt, Uint8 *r, Uint8 *g, Uint8 *b) {
+DECLSPEC void SDLCALL SDL_GetRGB (Uint32 pixel, SDL1_PixelFormat *fmt, Uint8 *r, Uint8 *g, Uint8 *b) {
 	Uint8 a;
 	SDL_GetRGBA(pixel, fmt, r, g, b, &a);
 }
@@ -481,11 +481,11 @@ static SDL1_VideoInfo video_info = {
 	480         /* current_h */
 };
 
-SDL1_VideoInfo *SDLCALL SDL_GetVideoInfo (void) {
+DECLSPEC SDL1_VideoInfo *SDLCALL SDL_GetVideoInfo (void) {
 	return &video_info;
 }
 
-char *SDLCALL SDL_VideoDriverName (char *namebuf, int maxlen) {
+DECLSPEC char *SDLCALL SDL_VideoDriverName (char *namebuf, int maxlen) {
 	const char *name = rSDL_GetCurrentVideoDriver();
 	if (!name) return NULL;
 	if (maxlen) {
@@ -529,7 +529,7 @@ static int rect_equal (SDL1_Rect *a, SDL1_Rect *b) {
 	return 1;
 }
 
-SDL1_Rect **SDLCALL SDL_ListModes (SDL1_PixelFormat *format, Uint32 flags) {
+DECLSPEC SDL1_Rect **SDLCALL SDL_ListModes (SDL1_PixelFormat *format, Uint32 flags) {
 	(void)format;
 	int i, j, nummode = rSDL_GetNumDisplayModes(0);
 	SDL_DisplayMode mode;
@@ -562,7 +562,7 @@ SDL1_Rect **SDLCALL SDL_ListModes (SDL1_PixelFormat *format, Uint32 flags) {
 	return mode_list;
 }
 
-int SDLCALL SDL_VideoModeOK(int width, int height, int bpp, Uint32 flags) {
+DECLSPEC int SDLCALL SDL_VideoModeOK(int width, int height, int bpp, Uint32 flags) {
 	int numdisp = rSDL_GetNumVideoDisplays();
 	int i, j, nummode, tbpp, cbpp = 0;
 	SDL_DisplayMode mode;
@@ -613,7 +613,7 @@ static SDL_bool grab = SDL_FALSE;
 static int real_width, real_height;
 static SDL_Rect scale_rect;
 
-void SDLCALL SDL_FreeSurface (SDL1_Surface *surface) {
+DECLSPEC void SDLCALL SDL_FreeSurface (SDL1_Surface *surface) {
 	SDL1_Proxy *proxy;
 	if (surface && surface != main_surface) {
 		proxy = (SDL1_Proxy *)surface;
@@ -776,7 +776,7 @@ static void gl_scale (void) {
 	rSDL_GL_MakeCurrent(main_window, main_glcontext);
 }
 
-SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp, Uint32 flags) {
+DECLSPEC SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp, Uint32 flags) {
 	Uint32 Rmask, Gmask, Bmask, Amask;
 	Uint32 pixfmt = SDL_PIXELFORMAT_ARGB8888;
 	Uint32 flags2 = vidflags1to2(flags);
@@ -858,14 +858,14 @@ SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp, Uint32 f
 	return main_surface;
 }
 
-SDL1_Surface *SDLCALL SDL_GetVideoSurface (void) {
+DECLSPEC SDL1_Surface *SDLCALL SDL_GetVideoSurface (void) {
 	return main_surface;
 }
 
 #define SDL1_LOGPAL  0x01
 #define SDL1_PHYSPAL 0x02
 
-int SDLCALL SDL_SetPalette (SDL1_Surface *surface, int flags, SDL1_Color *colors, int firstcolor, int ncolors) {
+DECLSPEC int SDLCALL SDL_SetPalette (SDL1_Surface *surface, int flags, SDL1_Color *colors, int firstcolor, int ncolors) {
 	SDL_Color colors2[256];
 	int i;
 	if (ncolors > 256) return 0;
@@ -887,7 +887,7 @@ int SDLCALL SDL_SetPalette (SDL1_Surface *surface, int flags, SDL1_Color *colors
 	return 1;
 }
 
-int SDLCALL SDL_SetColors (SDL1_Surface *surface, SDL1_Color *colors, int firstcolor, int ncolors) {
+DECLSPEC int SDLCALL SDL_SetColors (SDL1_Surface *surface, SDL1_Color *colors, int firstcolor, int ncolors) {
 	return SDL_SetPalette(surface, SDL1_LOGPAL | SDL1_PHYSPAL, colors, firstcolor, ncolors);
 }
 
@@ -926,7 +926,7 @@ static void convert_surface_dst (SDL1_Surface *src, SDL1_Surface *dst) {
 	}
 }
 
-SDL1_Surface *SDLCALL SDL_ConvertSurface (SDL1_Surface *src, SDL1_PixelFormat *fmt, Uint32 flags) {
+DECLSPEC SDL1_Surface *SDLCALL SDL_ConvertSurface (SDL1_Surface *src, SDL1_PixelFormat *fmt, Uint32 flags) {
 	SDL1_Surface *dst;
 	dst = SDL_CreateRGBSurface(flags, src->w, src->h, fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask);
 	if (!dst) return NULL;
@@ -935,12 +935,12 @@ SDL1_Surface *SDLCALL SDL_ConvertSurface (SDL1_Surface *src, SDL1_PixelFormat *f
 	return dst;
 }
 
-SDL1_Surface *SDL_DisplayFormat (SDL1_Surface *surface) {
+DECLSPEC SDL1_Surface *SDL_DisplayFormat (SDL1_Surface *surface) {
 	if (!main_surface) return NULL;
 	return SDL_ConvertSurface(surface, main_surface->format, 0);
 }
 
-SDL1_Surface *SDL_DisplayFormatAlpha (SDL1_Surface *surface) {
+DECLSPEC SDL1_Surface *SDL_DisplayFormatAlpha (SDL1_Surface *surface) {
 	int depth;
 	Uint32 Rmask, Gmask, Bmask, Amask;
 	SDL1_Surface *dst;
@@ -951,7 +951,7 @@ SDL1_Surface *SDL_DisplayFormatAlpha (SDL1_Surface *surface) {
 	return dst;
 }
 
-int SDLCALL SDL_Flip (SDL1_Surface *screen) {
+DECLSPEC int SDLCALL SDL_Flip (SDL1_Surface *screen) {
 	Uint8 *src;
 	Uint32 *dest;
 	void *texpix;
@@ -988,7 +988,7 @@ int SDLCALL SDL_Flip (SDL1_Surface *screen) {
 }
 
 /* TODO: Implement partial screen updates? */
-void SDLCALL SDL_UpdateRect (SDL1_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h) {
+DECLSPEC void SDLCALL SDL_UpdateRect (SDL1_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h) {
 	(void)x;
 	(void)y;
 	(void)w;
@@ -997,34 +997,34 @@ void SDLCALL SDL_UpdateRect (SDL1_Surface *screen, Sint32 x, Sint32 y, Sint32 w,
 }
 
 /* TODO: Implement partial screen updates? */
-void SDLCALL SDL_UpdateRects(SDL1_Surface *screen, int numrects, SDL1_Rect *rects)
+DECLSPEC void SDLCALL SDL_UpdateRects(SDL1_Surface *screen, int numrects, SDL1_Rect *rects)
 {
 	(void)numrects;
 	(void)rects;
 	SDL_Flip(screen);
 }
 
-int SDLCALL SDL_ShowCursor (int toggle) {
+DECLSPEC int SDLCALL SDL_ShowCursor (int toggle) {
 	int ret = rSDL_ShowCursor(toggle);
 	update_grab();
 	return ret;
 }
 
-void SDLCALL SDL_WarpMouse (Uint16 x, Uint16 y) {
+DECLSPEC void SDLCALL SDL_WarpMouse (Uint16 x, Uint16 y) {
 	if (main_window) rSDL_WarpMouseInWindow(main_window, x, y);
 }
 
-int SDLCALL SDL_GetGammaRamp (Uint16 *redtable, Uint16 *greentable, Uint16 *bluetable) {
+DECLSPEC int SDLCALL SDL_GetGammaRamp (Uint16 *redtable, Uint16 *greentable, Uint16 *bluetable) {
 	if (main_window) return rSDL_GetWindowGammaRamp(main_window, redtable, greentable, bluetable);
 	else return -1;
 }
 
-int SDLCALL SDL_SetGammaRamp (Uint16 *redtable, Uint16 *greentable, Uint16 *bluetable) {
+DECLSPEC int SDLCALL SDL_SetGammaRamp (Uint16 *redtable, Uint16 *greentable, Uint16 *bluetable) {
 	if (main_window) return rSDL_SetWindowGammaRamp(main_window, redtable, greentable, bluetable);
 	else return -1;
 }
 
-int SDLCALL SDL_SetGamma (float redgamma, float greengamma, float bluegamma) {
+DECLSPEC int SDLCALL SDL_SetGamma (float redgamma, float greengamma, float bluegamma) {
 	Uint16 redtable[256], greentable[256], bluetable[256];
 	rSDL_CalculateGammaRamp(redgamma, redtable);
 	rSDL_CalculateGammaRamp(greengamma, greentable);
@@ -1032,17 +1032,17 @@ int SDLCALL SDL_SetGamma (float redgamma, float greengamma, float bluegamma) {
 	return SDL_SetGammaRamp(redtable, greentable, bluetable);
 }
 
-int SDLCALL SDL_GL_LoadLibrary (const char *path) {
+DECLSPEC int SDLCALL SDL_GL_LoadLibrary (const char *path) {
 	int ret = rSDL_GL_LoadLibrary(path);
 	if (ret) printf("Error loading GL: %s", rSDL_GetError());
 	return ret;
 }
 
-void *SDLCALL SDL_GL_GetProcAddress (const char *proc) {
+DECLSPEC void *SDLCALL SDL_GL_GetProcAddress (const char *proc) {
 	return rSDL_GL_GetProcAddress(proc);
 }
 
-void SDLCALL SDL_GL_SwapBuffers (void) {
+DECLSPEC void SDLCALL SDL_GL_SwapBuffers (void) {
 	if (real_width != main_surface->w || real_height != main_surface->h) gl_scale();
 	rSDL_GL_SwapWindow(main_window);
 }
@@ -1124,7 +1124,7 @@ static int glattr1to2 (SDL1_GLattr attr, SDL_GLattr *out) {
 
 static int swap_control = 1;
 
-int SDLCALL SDL_GL_SetAttribute (SDL1_GLattr attr, int value) {
+DECLSPEC int SDLCALL SDL_GL_SetAttribute (SDL1_GLattr attr, int value) {
 	SDL_GLattr attr2;
 	if (glattr1to2(attr, &attr2)) {
 		return rSDL_GL_SetAttribute(attr2, value);
@@ -1139,7 +1139,7 @@ int SDLCALL SDL_GL_SetAttribute (SDL1_GLattr attr, int value) {
 	}
 }
 
-int SDLCALL SDL_GL_GetAttribute (SDL1_GLattr attr, int *value) {
+DECLSPEC int SDLCALL SDL_GL_GetAttribute (SDL1_GLattr attr, int *value) {
 	SDL_GLattr attr2;
 	if (glattr1to2(attr, &attr2)) {
 		return rSDL_GL_GetAttribute(attr2, value);
@@ -1154,13 +1154,13 @@ int SDLCALL SDL_GL_GetAttribute (SDL1_GLattr attr, int *value) {
 	}
 }
 
-void SDLCALL SDL_WM_SetCaption (const char *title, const char *icon) {
+DECLSPEC void SDLCALL SDL_WM_SetCaption (const char *title, const char *icon) {
 	(void)title;
 	(void)icon;
 }
 
 
-void SDLCALL SDL_WM_SetIcon (SDL_Surface *icon, Uint8 *mask) {
+DECLSPEC void SDLCALL SDL_WM_SetIcon (SDL_Surface *icon, Uint8 *mask) {
 	(void)icon;
 	(void)mask;
 }
@@ -1172,7 +1172,7 @@ typedef enum {
 	SDL1_GRAB_FULLSCREEN
 } SDL1_GrabMode;
 
-SDL1_GrabMode SDLCALL SDL_WM_GrabInput (SDL1_GrabMode mode) {
+DECLSPEC SDL1_GrabMode SDLCALL SDL_WM_GrabInput (SDL1_GrabMode mode) {
 	SDL1_GrabMode ret = grab ? SDL1_GRAB_ON : SDL1_GRAB_OFF;
 	switch (mode) {
 		case SDL1_GRAB_OFF: grab = SDL_FALSE; break;
@@ -1183,12 +1183,12 @@ SDL1_GrabMode SDLCALL SDL_WM_GrabInput (SDL1_GrabMode mode) {
 	return ret;
 }
 
-int SDLCALL SDL_WM_IconifyWindow (void) {
+DECLSPEC int SDLCALL SDL_WM_IconifyWindow (void) {
 	rSDL_MinimizeWindow(main_window);
 	return 1;
 }
 
-int SDLCALL SDL_WM_ToggleFullScreen (SDL1_Surface *surface) {
+DECLSPEC int SDLCALL SDL_WM_ToggleFullScreen (SDL1_Surface *surface) {
 	(void)surface;
 	return 0;
 }
@@ -1233,7 +1233,7 @@ static int compare_ver (SDL1_version version, int major, int minor, int patch) {
 static void noop (void) {
 }
 
-int SDLCALL SDL_GetWMInfo (SDL1_SysWMinfo *info) {
+DECLSPEC int SDLCALL SDL_GetWMInfo (SDL1_SysWMinfo *info) {
 	SDL_SysWMinfo info2;
 	if (!main_window) return 0;
 	SDL_VERSION(&info2.version);

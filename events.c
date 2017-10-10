@@ -26,7 +26,7 @@
 
 static int unicode = 0;
 
-int SDLCALL SDL_EnableUNICODE (int enable) {
+DECLSPEC int SDLCALL SDL_EnableUNICODE (int enable) {
 	int oldunicode = unicode;
 	switch (enable) {
 		case 0:
@@ -45,13 +45,13 @@ int SDLCALL SDL_EnableUNICODE (int enable) {
 static int key_delay = 1;
 static int key_interval = 1;
 
-int SDLCALL SDL_EnableKeyRepeat (int delay, int interval) {
+DECLSPEC int SDLCALL SDL_EnableKeyRepeat (int delay, int interval) {
 	key_delay = delay;
 	key_interval = interval;
 	return 0;
 }
 
-int SDLCALL SDL_JoystickEventState (int state) {
+DECLSPEC int SDLCALL SDL_JoystickEventState (int state) {
 	return rSDL_JoystickEventState(state);
 }
 
@@ -87,7 +87,7 @@ static SDL1Mod keymod2to1 (SDL_Keymod keymod) {
 	return ret;
 }
 
-SDL1Mod SDLCALL SDL_GetModState (void) {
+DECLSPEC SDL1Mod SDLCALL SDL_GetModState (void) {
 	return keymod2to1(rSDL_GetModState());
 }
 
@@ -330,7 +330,7 @@ typedef enum {
 
 static Uint8 key_state[SDLK1_LAST] = { 0 };
 
-Uint8 *SDLCALL SDL_GetKeyState (int *numkeys) {
+DECLSPEC Uint8 *SDLCALL SDL_GetKeyState (int *numkeys) {
 	if (numkeys) *numkeys = SDLK1_LAST;
 	return key_state;
 }
@@ -711,11 +711,11 @@ static Uint8 mousestate2to1 (Uint32 state) {
 	return state1;
 }
 
-Uint8 SDLCALL SDL_GetMouseState (int *x, int *y) {
+DECLSPEC Uint8 SDLCALL SDL_GetMouseState (int *x, int *y) {
 	return mousestate2to1(rSDL_GetMouseState(x, y));
 }
 
-Uint8 SDLCALL SDL_GetRelativeMouseState (int *x, int *y) {
+DECLSPEC Uint8 SDLCALL SDL_GetRelativeMouseState (int *x, int *y) {
 	return mousestate2to1(rSDL_GetRelativeMouseState(x, y));
 }
 
@@ -777,7 +777,7 @@ typedef enum {
 	SDL1_GETEVENT
 } SDL1_eventaction;
 
-int SDLCALL SDL_PeepEvents (SDL1_Event *events, int numevents, SDL1_eventaction action, Uint32 mask) {
+DECLSPEC int SDLCALL SDL_PeepEvents (SDL1_Event *events, int numevents, SDL1_eventaction action, Uint32 mask) {
 	SDL1_Event tmpevent;
 	int i, used = 0;
 	if (event_queue.lock && !rSDL_LockMutex(event_queue.lock)) {
@@ -808,7 +808,7 @@ int SDLCALL SDL_PeepEvents (SDL1_Event *events, int numevents, SDL1_eventaction 
 	}
 }
 
-int SDLCALL SDL_PushEvent(SDL1_Event *event) {
+DECLSPEC int SDLCALL SDL_PushEvent(SDL1_Event *event) {
 	if (SDL_PeepEvents(event, 1, SDL1_ADDEVENT, 0) <= 0) return -1;
 	return 0;
 }
@@ -816,11 +816,11 @@ int SDLCALL SDL_PushEvent(SDL1_Event *event) {
 typedef int (SDLCALL *SDL1_EventFilter)(const SDL1_Event *event);
 static SDL1_EventFilter event_filter = NULL;
 
-void SDLCALL SDL_SetEventFilter (SDL1_EventFilter filter) {
+DECLSPEC void SDLCALL SDL_SetEventFilter (SDL1_EventFilter filter) {
 	event_filter = filter;
 }
 
-SDL1_EventFilter SDLCALL SDL_GetEventFilter (void) {
+DECLSPEC SDL1_EventFilter SDLCALL SDL_GetEventFilter (void) {
 	return event_filter;
 }
 
@@ -934,7 +934,7 @@ static void process_event (SDL1_Event *event) {
 	}
 }
 
-void SDLCALL SDL_PumpEvents (void) {
+DECLSPEC void SDLCALL SDL_PumpEvents (void) {
 	SDL1_Event event;
 	SDL_Event event2;
 	if (!event_queue.lock) {
@@ -1050,19 +1050,19 @@ void SDLCALL SDL_PumpEvents (void) {
 	flush_unicode();
 }
 
-int SDLCALL SDL_PollEvent (SDL1_Event *event) {
+DECLSPEC int SDLCALL SDL_PollEvent (SDL1_Event *event) {
 	SDL_PumpEvents();
 	if (SDL_PeepEvents(event, 1, SDL1_GETEVENT, SDL1_ALLEVENTS) <= 0) return 0;
 	return 1;
 }
 
-int SDLCALL SDL_WaitEvent (SDL1_Event *event) {
+DECLSPEC int SDLCALL SDL_WaitEvent (SDL1_Event *event) {
 	while (!SDL_PollEvent(event)) {
 		if (!rSDL_WaitEvent(NULL)) return 0;
 	}
 	return 1;
 }
 
-Uint8 SDLCALL SDL_GetAppState (void) {
+DECLSPEC Uint8 SDLCALL SDL_GetAppState (void) {
 	return active_map;
 }

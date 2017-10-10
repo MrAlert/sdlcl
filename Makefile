@@ -1,4 +1,4 @@
-CFLAGS = -fPIC -Wall -Wextra -O2 `sdl2-config --cflags` -g -m32
+CFLAGS = -fPIC -Wall -Wextra -O2 `sdl2-config --cflags` -fvisibility=hidden -g -m32
 LDFLAGS = -shared -ldl -m32
 TARGET = libSDL-1.2.so.0
 

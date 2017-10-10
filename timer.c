@@ -22,10 +22,10 @@
 
 #include "SDL2.h"
 
-Uint32 SDLCALL SDL_GetTicks (void) {
+DECLSPEC Uint32 SDLCALL SDL_GetTicks (void) {
 	return rSDL_GetTicks();
 }
 
-void SDLCALL SDL_Delay (Uint32 ms) {
+DECLSPEC void SDLCALL SDL_Delay (Uint32 ms) {
 	rSDL_Delay(ms);
 }

@@ -37,7 +37,7 @@
 
 static void *lib = NULL;
 
-#define SDL2_SYMBOL(name, ret, param) ret (SDLCALL *r##name) param __attribute__ ((visibility ("hidden"))) = NULL;
+#define SDL2_SYMBOL(name, ret, param) ret (SDLCALL *r##name) param = NULL;
 #include "symbols.x"
 #undef SDL2_SYMBOL
 
@@ -82,25 +82,25 @@ static Uint32 initflags1to2 (Uint32 flags) {
 	return flags2;
 }
 
-int SDLCALL SDL_Init (Uint32 flags) {
+DECLSPEC int SDLCALL SDL_Init (Uint32 flags) {
 	if (!lib) return -1;
 	return rSDL_Init(initflags1to2(flags));
 }
 
-int SDLCALL SDL_InitSubSystem (Uint32 flags) {
+DECLSPEC int SDLCALL SDL_InitSubSystem (Uint32 flags) {
 	if (!lib) return -1;
 	return rSDL_InitSubSystem(initflags1to2(flags));
 }
 
-void SDLCALL SDL_QuitSubSystem (Uint32 flags) {
+DECLSPEC void SDLCALL SDL_QuitSubSystem (Uint32 flags) {
 	if (lib) rSDL_QuitSubSystem(initflags1to2(flags));
 }
 
-void SDLCALL SDL_Quit (void) {
+DECLSPEC void SDLCALL SDL_Quit (void) {
 	if (lib) rSDL_Quit();
 }
 
-Uint32 SDLCALL SDL_WasInit (Uint32 flags) {
+DECLSPEC Uint32 SDLCALL SDL_WasInit (Uint32 flags) {
 	Uint32 ret2, ret = 0;
 	if (!lib) return 0;
 	ret2 = rSDL_WasInit(initflags1to2(flags));
@@ -123,7 +123,7 @@ typedef enum {
 #define ERRBUF_SIZE 1024
 static char errbuf[ERRBUF_SIZE];
 
-char *SDLCALL SDL_GetError (void) {
+DECLSPEC char *SDLCALL SDL_GetError (void) {
 	if (lib) {
 		strncpy(errbuf, rSDL_GetError(), ERRBUF_SIZE);
 		errbuf[ERRBUF_SIZE - 1] = 0;
@@ -131,7 +131,7 @@ char *SDLCALL SDL_GetError (void) {
 	return errbuf;
 }
 
-void SDLCALL SDL_SetError (const char *fmt, ...) {
+DECLSPEC void SDLCALL SDL_SetError (const char *fmt, ...) {
 	char err[ERRBUF_SIZE];
 	va_list ap;
 	va_start(ap, fmt);
@@ -141,12 +141,12 @@ void SDLCALL SDL_SetError (const char *fmt, ...) {
 	else strcpy(errbuf, err);
 }
 
-void SDLCALL SDL_ClearError (void) {
+DECLSPEC void SDLCALL SDL_ClearError (void) {
 	if (lib) rSDL_ClearError();
 	else errbuf[0] = 0;
 }
 
-void SDLCALL SDL_Error (SDL1_errorcode code) {
+DECLSPEC void SDLCALL SDL_Error (SDL1_errorcode code) {
 	SDL_errorcode code2;
 	switch (code) {
 		case SDL1_ENOMEM: code2 = SDL_ENOMEM; break;

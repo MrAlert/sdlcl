@@ -24,14 +24,14 @@
 
 #include "SDL2.h"
 
-void *SDLCALL SDL_LoadObject (const char *sofile) {
+DECLSPEC void *SDLCALL SDL_LoadObject (const char *sofile) {
 	return dlopen(sofile, RTLD_LAZY);
 }
 
-void *SDLCALL SDL_LoadFunction (void *handle, const char *name) {
+DECLSPEC void *SDLCALL SDL_LoadFunction (void *handle, const char *name) {
 	return dlsym(handle, name);
 }
 
-void SDLCALL SDL_UnloadObject (void *handle) {
+DECLSPEC void SDLCALL SDL_UnloadObject (void *handle) {
 	dlclose(handle);
 }

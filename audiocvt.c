@@ -1291,7 +1291,7 @@ static void SDLCALL SDL_RateDIV2_c6 (SDL1_AudioCVT *cvt, Uint16 format) {
 	}
 }*/
 
-int SDLCALL SDL_ConvertAudio (SDL1_AudioCVT *cvt) {
+DECLSPEC int SDLCALL SDL_ConvertAudio (SDL1_AudioCVT *cvt) {
 	/* Make sure there's data to convert */
 	if ( cvt->buf == NULL ) {
 		//SDL_SetError("No buffer allocated for conversion");
@@ -1314,7 +1314,7 @@ int SDLCALL SDL_ConvertAudio (SDL1_AudioCVT *cvt) {
    audio filter is set up.
 */
   
-int SDLCALL SDL_BuildAudioCVT (SDL1_AudioCVT *cvt,
+DECLSPEC int SDLCALL SDL_BuildAudioCVT (SDL1_AudioCVT *cvt,
 	Uint16 src_format, Uint8 src_channels, int src_rate,
 	Uint16 dst_format, Uint8 dst_channels, int dst_rate) {
 /*printf("Build format %04x->%04x, channels %u->%u, rate %d->%d\n",

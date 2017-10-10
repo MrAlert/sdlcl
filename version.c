@@ -31,7 +31,7 @@
 static SDL1_version version = 
 	{ SDL1_MAJOR_VERSION, SDL1_MINOR_VERSION, SDL1_PATCHLEVEL };
 
-const SDL1_version * SDLCALL SDL_Linked_Version(void)
+DECLSPEC const SDL1_version * SDLCALL SDL_Linked_Version(void)
 {
 	return(&version);
 }

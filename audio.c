@@ -54,7 +54,7 @@ static void SDLCALL callback (void *userdata, Uint8 *stream, int len) {
 	cbdata.callback(cbdata.userdata, stream, len);
 }
 
-int SDLCALL SDL_OpenAudio (SDL1_AudioSpec *desired, SDL1_AudioSpec *obtained) {
+DECLSPEC int SDLCALL SDL_OpenAudio (SDL1_AudioSpec *desired, SDL1_AudioSpec *obtained) {
 	SDL_AudioSpec desired2;
 	memset(&desired2, 0, sizeof(SDL_AudioSpec));
 	desired2.freq = desired->freq;
@@ -85,27 +85,27 @@ int SDLCALL SDL_OpenAudio (SDL1_AudioSpec *desired, SDL1_AudioSpec *obtained) {
 	return -1;
 }
 
-void SDLCALL SDL_PauseAudio (int pause_on) {
+DECLSPEC void SDLCALL SDL_PauseAudio (int pause_on) {
 	rSDL_PauseAudio(pause_on);
 }
 
-void SDLCALL SDL_MixAudio (Uint8 *dst, Uint8 *src, Uint32 len, int volume) {
+DECLSPEC void SDLCALL SDL_MixAudio (Uint8 *dst, Uint8 *src, Uint32 len, int volume) {
 	rSDL_MixAudio(dst, src, len, volume);
 }
 
-void SDLCALL SDL_LockAudio (void) {
+DECLSPEC void SDLCALL SDL_LockAudio (void) {
 	rSDL_LockAudio();
 }
 
-void SDLCALL SDL_UnlockAudio (void) {
+DECLSPEC void SDLCALL SDL_UnlockAudio (void) {
 	rSDL_UnlockAudio();
 }
 
-void SDLCALL SDL_CloseAudio (void) {
+DECLSPEC void SDLCALL SDL_CloseAudio (void) {
 	rSDL_CloseAudio();
 }
 
-char *SDLCALL SDL_AudioDriverName (char *namebuf, int maxlen) {
+DECLSPEC char *SDLCALL SDL_AudioDriverName (char *namebuf, int maxlen) {
 	const char *name = rSDL_GetCurrentAudioDriver();
 	if (!name) return NULL;
 	strncpy(namebuf, name, maxlen);
@@ -113,7 +113,7 @@ char *SDLCALL SDL_AudioDriverName (char *namebuf, int maxlen) {
 	return namebuf;
 }
 
-SDL1_AudioSpec *SDLCALL SDL_LoadWAV_RW (SDL1_RWops *src, int freesrc, SDL1_AudioSpec *spec, Uint8 **audio_buf, Uint32 *audio_len) {
+DECLSPEC SDL1_AudioSpec *SDLCALL SDL_LoadWAV_RW (SDL1_RWops *src, int freesrc, SDL1_AudioSpec *spec, Uint8 **audio_buf, Uint32 *audio_len) {
 	SDL_AudioSpec spec2, *ret;
 	SDL_RWops *src2 = SDLCL_RWFromSDL1(src);
 	if (!src2) {
@@ -134,6 +134,6 @@ SDL1_AudioSpec *SDLCALL SDL_LoadWAV_RW (SDL1_RWops *src, int freesrc, SDL1_Audio
 	return NULL;
 }
 
-void SDLCALL SDL_FreeWAV(Uint8 *audio_buf) {
+DECLSPEC void SDLCALL SDL_FreeWAV(Uint8 *audio_buf) {
 	rSDL_FreeWAV(audio_buf);
 }

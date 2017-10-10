@@ -26,11 +26,11 @@
 #include "SDL2.h"
 #include "rwops.h"
 
-SDL1_RWops *SDLCALL SDL_AllocRW (void) {
+DECLSPEC SDL1_RWops *SDLCALL SDL_AllocRW (void) {
 	return malloc(sizeof(SDL1_RWops));
 }
 
-void SDLCALL SDL_FreeRW (SDL1_RWops *area) {
+DECLSPEC void SDLCALL SDL_FreeRW (SDL1_RWops *area) {
 	free(area);
 }
 
@@ -131,7 +131,7 @@ static int SDLCALL mem_close (SDL1_RWops *context) {
 	return 0;
 }
 
-SDL1_RWops *SDLCALL SDL_RWFromFP (FILE *fp, int autoclose) {
+DECLSPEC SDL1_RWops *SDLCALL SDL_RWFromFP (FILE *fp, int autoclose) {
 	SDL1_RWops *rwops;
 	rwops = SDL_AllocRW();
 	if (rwops) {
@@ -145,7 +145,7 @@ SDL1_RWops *SDLCALL SDL_RWFromFP (FILE *fp, int autoclose) {
 	return rwops;
 }
 
-SDL1_RWops *SDLCALL SDL_RWFromFile (const char *file, const char *mode) {
+DECLSPEC SDL1_RWops *SDLCALL SDL_RWFromFile (const char *file, const char *mode) {
 	SDL1_RWops *rwops = NULL;
 	FILE *fp = NULL;
 	(void)fp;
@@ -162,7 +162,7 @@ SDL1_RWops *SDLCALL SDL_RWFromFile (const char *file, const char *mode) {
 	return rwops;
 }
 
-SDL1_RWops *SDLCALL SDL_RWFromMem (void *mem, int size) {
+DECLSPEC SDL1_RWops *SDLCALL SDL_RWFromMem (void *mem, int size) {
 	SDL1_RWops *rwops;
 	rwops = SDL_AllocRW();
 	if (rwops) {
@@ -177,7 +177,7 @@ SDL1_RWops *SDLCALL SDL_RWFromMem (void *mem, int size) {
 	return rwops;
 }
 
-SDL1_RWops *SDLCALL SDL_RWFromConstMem (const void *mem, int size) {
+DECLSPEC SDL1_RWops *SDLCALL SDL_RWFromConstMem (const void *mem, int size) {
 	SDL1_RWops *rwops;
 	rwops = SDL_AllocRW();
 	if (rwops) {
@@ -219,7 +219,7 @@ static int sdl1_close (SDL_RWops *context) {
 	return ret;
 }
 
-__attribute__ ((visibility ("hidden"))) SDL_RWops *SDLCALL SDLCL_RWFromSDL1 (SDL1_RWops *rwops) {
+SDL_RWops *SDLCALL SDLCL_RWFromSDL1 (SDL1_RWops *rwops) {
 	SDL_RWops *rwops2;
 	if (!rwops) return NULL;
 	rwops2 = rSDL_AllocRW();
@@ -236,7 +236,7 @@ __attribute__ ((visibility ("hidden"))) SDL_RWops *SDLCALL SDLCL_RWFromSDL1 (SDL
 }
 
 #define ReadBits(E,B) \
-Uint##B SDLCALL SDL_Read##E##B (SDL1_RWops *src) { \
+DECLSPEC Uint##B SDLCALL SDL_Read##E##B (SDL1_RWops *src) { \
 	Uint##B value; \
 	SDL1_RWread(src, &value, sizeof(value), 1); \
 	return SDL_Swap##E##B(value); \
@@ -250,7 +250,7 @@ ReadBits(LE, 64)
 ReadBits(BE, 64)
 
 #define WriteBits(E,B) \
-int SDLCALL SDL_Write##E##B (SDL1_RWops *dst, Uint##B value) { \
+DECLSPEC int SDLCALL SDL_Write##E##B (SDL1_RWops *dst, Uint##B value) { \
 	value = SDL_Swap##E##B(value); \
 	return SDL1_RWwrite(dst, &value, sizeof(value), 1); \
 }
