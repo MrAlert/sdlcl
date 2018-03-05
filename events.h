@@ -25,6 +25,10 @@
 
 #include "SDL2.h"
 
+#define SDL1_DISABLE 0
+#define SDL1_ENABLE  1
+#define SDL1_QUERY   -1
+
 typedef enum {
 	KMOD1_NONE     = 0x0000,
 	KMOD1_LSHIFT   = 0x0001,
@@ -372,14 +376,17 @@ typedef union SDL1_Event {
 #define SDL1_PRESSED  1
 
 /* General event functions */
-extern void SDLCALL SDLCL_ProcessEvent(SDL1_Event *event);
+extern void SDLCALL SDLCL_ProcessEvent (SDL1_Event *event);
 
 /* Keyboard event functions */
-extern void SDLCALL SDLCL_ProcessKeyEvent(SDL_Event *event2);
+extern void SDLCALL SDLCL_ProcessKeyEvent (SDL_Event *event2);
 
 /* Mouse event functions */
-extern void SDLCALL SDLCL_ProcessMouseMotion(SDL_Event *event2);
-extern void SDLCALL SDLCL_ProcessMouseButton(SDL_Event *event2);
-extern void SDLCALL SDLCL_ProcessMouseWheel(SDL_Event *event2);
+extern DECLSPEC Uint8 SDLCALL SDL_GetMouseState (int *x, int *y);
+extern void SDLCALL SDLCL_SetMouseRange (int x, int y);
+extern void SDLCALL SDLCL_GetMouseOffset (int *x, int *y);
+extern void SDLCALL SDLCL_ProcessMouseMotion (SDL_Event *event2);
+extern void SDLCALL SDLCL_ProcessMouseButton (SDL_Event *event2);
+extern void SDLCALL SDLCL_ProcessMouseWheel (SDL_Event *event2);
 
 #endif

@@ -1,5 +1,5 @@
-CFLAGS = -fPIC -Wall -Wextra -O2 `sdl2-config --cflags` -fvisibility=hidden -g -m32
-LDFLAGS = -shared -ldl -m32
+CFLAGS = -fPIC -Wall -Wextra -O2 `sdl2-config --cflags` -fvisibility=hidden -g
+LDFLAGS = -shared -ldl
 TARGET = libSDL-1.2.so.0
 
 SRCS = main.c video.c audio.c audiocvt.c timer.c events.c keyboard.c mouse.c \

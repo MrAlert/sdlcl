@@ -25,6 +25,7 @@
 
 #include "SDL2.h"
 #include "SDL_opengl.h"
+#include "events.h"
 #include "rwops.h"
 #include "version.h"
 
@@ -597,7 +598,7 @@ DECLSPEC int SDLCALL SDL_VideoModeOK(int width, int height, int bpp, Uint32 flag
 }
 
 static SDL_Window *main_window = NULL;
-static SDL_Renderer *main_renderer = NULL;
+static SDL_Renderer *main_renderer = NULL;;
 static SDL_Texture *main_texture = NULL;
 static SDL_GLContext main_glcontext = NULL;
 static SDL1_Surface *main_surface = NULL;
@@ -609,7 +610,10 @@ static Uint32 physical_palette[256];
 
 static Uint32 mode_flags = 0;
 static SDL_bool grab = SDL_FALSE;
+static int cursor_showing = SDL1_ENABLE;
 
+static int scaling = 0;
+static int virtual_width, virtual_height;
 static int real_width, real_height;
 static SDL_Rect scale_rect;
 
@@ -652,9 +656,10 @@ static void close_window (void) {
 }
 
 static void update_grab (void) {
+	rSDL_ShowCursor((!scaling && cursor_showing) ? SDL_ENABLE : SDL_DISABLE);
 	if (main_window)
 		rSDL_SetWindowGrab(main_window, (mode_flags & SDL1_FULLSCREEN) ? SDL_TRUE : grab);
-	if (/*grab &&*/ rSDL_ShowCursor(SDL_QUERY) == SDL_DISABLE)
+	if (/*grab &&*/ !cursor_showing)
 		rSDL_SetRelativeMouseMode(SDL_TRUE);
 	else
 		rSDL_SetRelativeMouseMode(SDL_FALSE);
@@ -672,26 +677,32 @@ static int next_pow2 (int x) {
 }
 
 static void (APIENTRY *main_glFinish)(void);
+static void (APIENTRY *scale_glBitmap)(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte *bitmap);
 static void (APIENTRY *scale_glClear)(GLbitfield mask);
 static void (APIENTRY *scale_glCopyTexSubImage2D)(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
+static void (APIENTRY *scale_glDisable)(GLenum cap);
 static void (APIENTRY *scale_glDrawArrays)(GLenum mode, GLint first, GLsizei count);
+static void (APIENTRY *scale_glDrawPixels)(GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *data);
+static void (APIENTRY *scale_glEnable)(GLenum cap);
 static void (APIENTRY *scale_glFinish)(void);
+static void (APIENTRY *scale_glRasterPos2f)(GLfloat x, GLfloat y);
+static void (APIENTRY *scale_glViewport)(GLint x, GLint y, GLsizei width, GLsizei height);
 
 static GLfloat scale_vertex[6] = { -1, -1, 3, -1, -1, 3 };
 static GLfloat scale_texcoord[6] = { 0, 0, 2, 0, 0, 2 };
 
 static int init_scale (void) {
 	void (APIENTRY *scale_glBindTexture)(GLenum target, GLuint texture);
-	void (APIENTRY *scale_glEnable)(GLenum cap);
+	void (APIENTRY *scale_glBlendFunc)(GLenum sfactor, GLenum dfactor);
 	void (APIENTRY *scale_glEnableClientState)(GLenum cap);
 	void (APIENTRY *scale_glGenTextures)(GLsizei n, GLuint *textures);
 	void (APIENTRY *scale_glLoadIdentity)(void);
 	void (APIENTRY *scale_glMatrixMode)(GLenum mode);
+	void (APIENTRY *scale_glPixelZoom)(GLfloat xfactor, GLfloat yfactor);
 	void (APIENTRY *scale_glTexCoordPointer)(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
 	void (APIENTRY *scale_glTexImage2D)(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
 	void (APIENTRY *scale_glTexParameteri)(GLenum target, GLenum pname, GLint param);
 	void (APIENTRY *scale_glVertexPointer)(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-	void (APIENTRY *scale_glViewport)(GLint x, GLint y, GLsizei width, GLsizei height);
 	void (APIENTRY *main_glViewport)(GLint x, GLint y, GLsizei width, GLsizei height);
 	int texw, texh;
 	GLuint scale_texture;
@@ -709,14 +720,22 @@ static int init_scale (void) {
 		scale_texcoord[5] = (GLfloat)main_surface->h / (GLfloat)texh * 2.0;
 		scale_glcontext = rSDL_GL_CreateContext(main_window);
 		if (!scale_glcontext) return 0;
+		scale_glBitmap = rSDL_GL_GetProcAddress("glBitmap");
+		if (!scale_glBitmap) return 0;
 		scale_glBindTexture = rSDL_GL_GetProcAddress("glBindTexture");
 		if (!scale_glBindTexture) return 0;
+		scale_glBlendFunc = rSDL_GL_GetProcAddress("glBlendFunc");
+		if (!scale_glBlendFunc) return 0;
 		scale_glClear = rSDL_GL_GetProcAddress("glClear");
 		if (!scale_glClear) return 0;
 		scale_glCopyTexSubImage2D = rSDL_GL_GetProcAddress("glCopyTexSubImage2D");
 		if (!scale_glCopyTexSubImage2D) return 0;
+		scale_glDisable = rSDL_GL_GetProcAddress("glDisable");
+		if (!scale_glDisable) return 0;
 		scale_glDrawArrays = rSDL_GL_GetProcAddress("glDrawArrays");
 		if (!scale_glDrawArrays) return 0;
+		scale_glDrawPixels = rSDL_GL_GetProcAddress("glDrawPixels");
+		if (!scale_glDrawPixels) return 0;
 		scale_glEnable = rSDL_GL_GetProcAddress("glEnable");
 		if (!scale_glEnable) return 0;
 		scale_glEnableClientState = rSDL_GL_GetProcAddress("glEnableClientState");
@@ -729,6 +748,10 @@ static int init_scale (void) {
 		if (!scale_glLoadIdentity) return 0;
 		scale_glMatrixMode = rSDL_GL_GetProcAddress("glMatrixMode");
 		if (!scale_glMatrixMode) return 0;
+		scale_glPixelZoom = rSDL_GL_GetProcAddress("glPixelZoom");
+		if (!scale_glPixelZoom) return 0;
+		scale_glRasterPos2f = rSDL_GL_GetProcAddress("glRasterPos2f");
+		if (!scale_glRasterPos2f) return 0;
 		scale_glTexCoordPointer = rSDL_GL_GetProcAddress("glTexCoordPointer");
 		if (!scale_glTexCoordPointer) return 0;
 		scale_glTexImage2D = rSDL_GL_GetProcAddress("glTexImage2D");
@@ -758,6 +781,8 @@ static int init_scale (void) {
 		scale_glTexCoordPointer(2, GL_FLOAT, 0, &scale_texcoord);
 		scale_glEnableClientState(GL_VERTEX_ARRAY);
 		scale_glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		scale_glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+		scale_glPixelZoom(1, -1);
 		free(texp);
 		rSDL_GL_MakeCurrent(main_window, main_glcontext);
 		main_glFinish = rSDL_GL_GetProcAddress("glFinish");
@@ -769,9 +794,51 @@ static int init_scale (void) {
 	return 1;
 }
 
+#define X 255, 255
+#define O 0, 255
+#define _ 0, 0
+static const Uint8 cursor_image[512] = {
+	_,_,X,X,_,_,_,_,_,_,_,_,_,_,_,_,
+	_,_,X,O,X,_,_,_,_,_,_,_,_,_,_,_,
+	_,_,X,O,O,X,_,_,_,_,_,_,_,_,_,_,
+	_,_,X,O,O,O,X,_,_,_,_,_,_,_,_,_,
+	_,_,X,O,O,O,O,X,_,_,_,_,_,_,_,_,
+	_,_,X,O,O,O,O,O,X,_,_,_,_,_,_,_,
+	_,_,X,O,O,O,O,O,O,X,_,_,_,_,_,_,
+	_,_,X,O,O,O,O,O,O,O,X,_,_,_,_,_,
+	_,_,X,O,O,O,O,O,O,O,O,X,_,_,_,_,
+	_,_,X,O,O,O,O,O,X,X,X,X,_,_,_,_,
+	_,_,X,O,O,X,O,O,X,_,_,_,_,_,_,_,
+	_,_,X,O,X,_,X,O,O,X,_,_,_,_,_,_,
+	_,_,X,X,_,_,X,O,O,X,_,_,_,_,_,_,
+	_,_,_,_,_,_,_,X,O,O,X,_,_,_,_,_,
+	_,_,_,_,_,_,_,X,O,O,X,_,_,_,_,_,
+	_,_,_,_,_,_,_,_,X,X,_,_,_,_,_,_
+};
+#undef X
+#undef O
+#undef _
+static const int cursor_hot_x = 3;
+static const int cursor_hot_y = 1;
+static const int cursor_width = 16;
+static const int cursor_height = 16;
+
 static void gl_scale (void) {
+	int x, y;
 	main_glFinish();
 	rSDL_GL_MakeCurrent(main_window, scale_glcontext);
+	if (cursor_showing) {
+		SDL_GetMouseState(&x, &y);
+		scale_glViewport(0, 0, virtual_width, virtual_height);
+		scale_glEnable(GL_BLEND);
+		scale_glDisable(GL_TEXTURE_2D);
+		scale_glRasterPos2f(-1, 1);
+		scale_glBitmap(0, 0, 0, 0, x - cursor_hot_x, -(y - cursor_hot_y), NULL);
+		scale_glDrawPixels(cursor_width, cursor_height, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, cursor_image);
+		scale_glEnable(GL_TEXTURE_2D);
+		scale_glDisable(GL_BLEND);
+		scale_glViewport(scale_rect.x, scale_rect.y, scale_rect.w, scale_rect.h);
+	}
 	scale_glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, main_surface->w, main_surface->h);
 	scale_glFinish();
 	scale_glClear(GL_COLOR_BUFFER_BIT);
@@ -785,9 +852,6 @@ DECLSPEC SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp,
 	Uint32 pixfmt = SDL_PIXELFORMAT_ARGB8888;
 	Uint32 flags2 = vidflags1to2(flags);
 	int tbpp;
-	(void)width;
-	(void)height;
-	(void)bpp;
 	if (flags2 == SDL_WINDOW_INVALID) return NULL;
 	if (bpp && !(flags & SDL1_ANYFORMAT)) {
 		switch (bpp) {
@@ -852,12 +916,16 @@ DECLSPEC SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp,
 		return NULL;
 	}
 	mode_flags = flags;
-	if (real_width != width || real_height != height) {
+	scaling = (real_width != width || real_height != height);
+	if (scaling) {
+		virtual_width = width;
+		virtual_height = height;
 		if (!init_scale()) {
 			close_window();
 			return NULL;
 		}
 	}
+	SDLCL_SetMouseRange(width, height);
 	update_grab();
 	return main_surface;
 }
@@ -1009,13 +1077,19 @@ DECLSPEC void SDLCALL SDL_UpdateRects(SDL1_Surface *screen, int numrects, SDL1_R
 }
 
 DECLSPEC int SDLCALL SDL_ShowCursor (int toggle) {
-	int ret = rSDL_ShowCursor(toggle);
+	int ret = cursor_showing;
+	if (toggle != SDL1_QUERY)
+		cursor_showing = toggle;
 	update_grab();
 	return ret;
 }
 
 DECLSPEC void SDLCALL SDL_WarpMouse (Uint16 x, Uint16 y) {
-	if (main_window) rSDL_WarpMouseInWindow(main_window, x, y);
+	int offx, offy;
+	if (main_window) {
+		SDLCL_GetMouseOffset(&offx, &offy);
+		rSDL_WarpMouseInWindow(main_window, x + offx, y + offy);
+	}
 }
 
 DECLSPEC int SDLCALL SDL_GetGammaRamp (Uint16 *redtable, Uint16 *greentable, Uint16 *bluetable) {
@@ -1047,7 +1121,7 @@ DECLSPEC void *SDLCALL SDL_GL_GetProcAddress (const char *proc) {
 }
 
 DECLSPEC void SDLCALL SDL_GL_SwapBuffers (void) {
-	if (real_width != main_surface->w || real_height != main_surface->h) gl_scale();
+	if (scaling) gl_scale();
 	rSDL_GL_SwapWindow(main_window);
 }
 

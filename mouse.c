@@ -41,6 +41,10 @@ static Sint16 mouse_x = 0;
 static Sint16 mouse_y = 0;
 static Sint16 delta_x = 0;
 static Sint16 delta_y = 0;
+static Sint16 max_x = 0;
+static Sint16 max_y = 0;
+static Sint16 offset_x = 0;
+static Sint16 offset_y = 0;
 static Uint8 button_state = 0;
 
 static Uint8 mousebutton2to1 (Uint8 button) {
@@ -77,10 +81,30 @@ DECLSPEC Uint8 SDLCALL SDL_GetRelativeMouseState (int *x, int *y) {
 	return button_state;
 }
 
+void SDLCALL SDLCL_SetMouseRange (int x, int y) {
+	max_x = x;
+	max_y = y;
+	offset_x = offset_y = 0;
+	mouse_x = mouse_y = 0;
+}
+
+void SDLCALL SDLCL_GetMouseOffset (int *x, int *y) {
+	*x = offset_x;
+	*y = offset_y;
+}
+
+static void update_position (Sint16 x, Sint16 y) {
+	if (x >= offset_x + max_x) offset_x = x - max_x + 1;
+	if (y >= offset_y + max_y) offset_y = y - max_y + 1;
+	if (x < offset_x) offset_x = x;
+	if (y < offset_y) offset_y = y;
+	mouse_x = x - offset_x;
+	mouse_y = y - offset_y;
+}
+
 void SDLCALL SDLCL_ProcessMouseMotion (SDL_Event *event2) {
 	SDL1_Event event;
-	mouse_x = event2->motion.x;
-	mouse_y = event2->motion.y;
+	update_position(event2->motion.x, event2->motion.y);
 	delta_x += event2->motion.xrel;
 	delta_y += event2->motion.yrel;
 	button_state = mousestate2to1(event2->motion.state);
@@ -98,8 +122,7 @@ void SDLCALL SDLCL_ProcessMouseButton (SDL_Event *event2) {
 	Uint8 button = mousebutton2to1(event2->button.button);
 	Uint8 mask = SDL1_BUTTON(button);
 	SDL1_Event event;
-	mouse_x = event2->button.x;
-	mouse_y = event2->button.y;
+	update_position(event2->button.x, event2->button.y);
 	if (event2->button.state == SDL_PRESSED) button_state |= mask;
 	else button_state &= ~mask;
 	event.button.type = (event2->type == SDL_MOUSEBUTTONDOWN) ? SDL1_MOUSEBUTTONDOWN : SDL1_MOUSEBUTTONUP;
