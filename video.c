@@ -21,6 +21,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 
 #include "SDL2.h"
@@ -29,6 +30,7 @@
 #include "events.h"
 #include "rwops.h"
 #include "version.h"
+#include "loadso.h"
 
 typedef struct SDL1_Proxy {
 	SDL1_Surface surface;
@@ -1291,6 +1293,254 @@ DECLSPEC int SDL_SoftStretch (SDL1_Surface *src, SDL1_Rect *srcrect, SDL1_Surfac
 	}
 	return rSDL_SoftStretch(src->sdl2_surface, srcptr, dst->sdl2_surface, dstptr);
 }
+
+#if defined(SDL_VIDEO_DRIVER_X11)
+#include <X11/Xutil.h>
+#include <X11/keysym.h>
+
+static SDL1Key ODD_keymap[256];
+static SDL1Key MISC_keymap[256];
+
+static void *x11_lib = NULL;
+static KeyCode (*rXKeysymToKeycode) (Display *a, KeySym b) = NULL;
+#if NeedWidePrototypes
+static KeySym (*rXKeycodeToKeysym) (Display *a, unsigned int b, int c) = NULL;
+#else
+static KeySym (*rXKeycodeToKeysym) (Display *a, KeyCode b, int c) = NULL;
+#endif
+static int (*rXLookupString) (XKeyEvent *a, char *b, int c, KeySym *d, XComposeStatus *e) = NULL;
+static XModifierKeymap *(*rXGetModifierMapping) (Display *a) = NULL;
+static int (*rXFreeModifiermap) (XModifierKeymap *a) = NULL;
+
+static int init_x11_data (void) {
+	static int init = 0;
+	int i;
+	if (init) return 1;
+
+	x11_lib = SDL_LoadObject("libX11.so.6");
+	if (!x11_lib) return 0;
+	rXKeysymToKeycode = SDL_LoadFunction(x11_lib, "XKeysymToKeycode");
+	rXKeycodeToKeysym = SDL_LoadFunction(x11_lib, "XKeycodeToKeysym");
+	rXLookupString = SDL_LoadFunction(x11_lib, "XLookupString");
+	rXGetModifierMapping = SDL_LoadFunction(x11_lib, "XGetModifierMapping");
+	rXFreeModifiermap = SDL_LoadFunction(x11_lib, "XFreeModifiermap");
+	if (!rXKeysymToKeycode || !rXKeycodeToKeysym || !rXLookupString || !rXGetModifierMapping || !rXFreeModifiermap) {
+		SDL_UnloadObject(x11_lib);
+		return 0;
+	}
+
+	/* Odd keys used in international keyboards */
+	for (i = 0; i < 256; i++) ODD_keymap[i] = SDLK1_UNKNOWN;
+	/* These X keysyms have 0xFE as the high byte */
+	ODD_keymap[XK_dead_grave&0xFF] = SDLK1_COMPOSE;
+	ODD_keymap[XK_dead_acute&0xFF] = SDLK1_COMPOSE;
+	ODD_keymap[XK_dead_tilde&0xFF] = SDLK1_COMPOSE;
+	ODD_keymap[XK_dead_macron&0xFF] = SDLK1_COMPOSE;
+	ODD_keymap[XK_dead_breve&0xFF] = SDLK1_COMPOSE;
+	ODD_keymap[XK_dead_abovedot&0xFF] = SDLK1_COMPOSE;
+	ODD_keymap[XK_dead_diaeresis&0xFF] = SDLK1_COMPOSE;
+	ODD_keymap[XK_dead_abovering&0xFF] = SDLK1_COMPOSE;
+	ODD_keymap[XK_dead_doubleacute&0xFF] = SDLK1_COMPOSE;
+	ODD_keymap[XK_dead_caron&0xFF] = SDLK1_COMPOSE;
+	ODD_keymap[XK_dead_cedilla&0xFF] = SDLK1_COMPOSE;
+	ODD_keymap[XK_dead_ogonek&0xFF] = SDLK1_COMPOSE;
+	ODD_keymap[XK_dead_iota&0xFF] = SDLK1_COMPOSE;
+	ODD_keymap[XK_dead_voiced_sound&0xFF] = SDLK1_COMPOSE;
+	ODD_keymap[XK_dead_semivoiced_sound&0xFF] = SDLK1_COMPOSE;
+	ODD_keymap[XK_dead_belowdot&0xFF] = SDLK1_COMPOSE;
+#ifdef XK_dead_hook
+	ODD_keymap[XK_dead_hook&0xFF] = SDLK1_COMPOSE;
+#endif
+#ifdef XK_dead_horn
+	ODD_keymap[XK_dead_horn&0xFF] = SDLK1_COMPOSE;
+#endif
+
+#ifdef XK_dead_circumflex
+	ODD_keymap[XK_dead_circumflex&0xFF] = SDLK1_CARET;
+#endif
+#ifdef XK_ISO_Level3_Shift
+	ODD_keymap[XK_ISO_Level3_Shift&0xFF] = SDLK1_MODE; /* "Alt Gr" key */
+#endif
+
+	/* Map the miscellaneous keys */
+	for (i = 0; i < 256; i++) MISC_keymap[i] = SDLK1_UNKNOWN;
+	/* These X keysyms have 0xFF as the high byte */
+	MISC_keymap[XK_BackSpace&0xFF] = SDLK1_BACKSPACE;
+	MISC_keymap[XK_Tab&0xFF] = SDLK1_TAB;
+	MISC_keymap[XK_Clear&0xFF] = SDLK1_CLEAR;
+	MISC_keymap[XK_Return&0xFF] = SDLK1_RETURN;
+	MISC_keymap[XK_Pause&0xFF] = SDLK1_PAUSE;
+	MISC_keymap[XK_Escape&0xFF] = SDLK1_ESCAPE;
+	MISC_keymap[XK_Delete&0xFF] = SDLK1_DELETE;
+
+	MISC_keymap[XK_KP_0&0xFF] = SDLK1_KP0; /* Keypad 0-9 */
+	MISC_keymap[XK_KP_1&0xFF] = SDLK1_KP1;
+	MISC_keymap[XK_KP_2&0xFF] = SDLK1_KP2;
+	MISC_keymap[XK_KP_3&0xFF] = SDLK1_KP3;
+	MISC_keymap[XK_KP_4&0xFF] = SDLK1_KP4;
+	MISC_keymap[XK_KP_5&0xFF] = SDLK1_KP5;
+	MISC_keymap[XK_KP_6&0xFF] = SDLK1_KP6;
+	MISC_keymap[XK_KP_7&0xFF] = SDLK1_KP7;
+	MISC_keymap[XK_KP_8&0xFF] = SDLK1_KP8;
+	MISC_keymap[XK_KP_9&0xFF] = SDLK1_KP9;
+	MISC_keymap[XK_KP_Insert&0xFF] = SDLK1_KP0;
+	MISC_keymap[XK_KP_End&0xFF] = SDLK1_KP1;
+	MISC_keymap[XK_KP_Down&0xFF] = SDLK1_KP2;
+	MISC_keymap[XK_KP_Page_Down&0xFF] = SDLK1_KP3;
+	MISC_keymap[XK_KP_Left&0xFF] = SDLK1_KP4;
+	MISC_keymap[XK_KP_Begin&0xFF] = SDLK1_KP5;
+	MISC_keymap[XK_KP_Right&0xFF] = SDLK1_KP6;
+	MISC_keymap[XK_KP_Home&0xFF] = SDLK1_KP7;
+	MISC_keymap[XK_KP_Up&0xFF] = SDLK1_KP8;
+	MISC_keymap[XK_KP_Page_Up&0xFF] = SDLK1_KP9;
+	MISC_keymap[XK_KP_Delete&0xFF] = SDLK1_KP_PERIOD;
+	MISC_keymap[XK_KP_Decimal&0xFF] = SDLK1_KP_PERIOD;
+	MISC_keymap[XK_KP_Divide&0xFF] = SDLK1_KP_DIVIDE;
+	MISC_keymap[XK_KP_Multiply&0xFF] = SDLK1_KP_MULTIPLY;
+	MISC_keymap[XK_KP_Subtract&0xFF] = SDLK1_KP_MINUS;
+	MISC_keymap[XK_KP_Add&0xFF] = SDLK1_KP_PLUS;
+	MISC_keymap[XK_KP_Enter&0xFF] = SDLK1_KP_ENTER;
+	MISC_keymap[XK_KP_Equal&0xFF] = SDLK1_KP_EQUALS;
+
+	MISC_keymap[XK_Up&0xFF] = SDLK1_UP;
+	MISC_keymap[XK_Down&0xFF] = SDLK1_DOWN;
+	MISC_keymap[XK_Right&0xFF] = SDLK1_RIGHT;
+	MISC_keymap[XK_Left&0xFF] = SDLK1_LEFT;
+	MISC_keymap[XK_Insert&0xFF] = SDLK1_INSERT;
+	MISC_keymap[XK_Home&0xFF] = SDLK1_HOME;
+	MISC_keymap[XK_End&0xFF] = SDLK1_END;
+	MISC_keymap[XK_Page_Up&0xFF] = SDLK1_PAGEUP;
+	MISC_keymap[XK_Page_Down&0xFF] = SDLK1_PAGEDOWN;
+
+	MISC_keymap[XK_F1&0xFF] = SDLK1_F1;
+	MISC_keymap[XK_F2&0xFF] = SDLK1_F2;
+	MISC_keymap[XK_F3&0xFF] = SDLK1_F3;
+	MISC_keymap[XK_F4&0xFF] = SDLK1_F4;
+	MISC_keymap[XK_F5&0xFF] = SDLK1_F5;
+	MISC_keymap[XK_F6&0xFF] = SDLK1_F6;
+	MISC_keymap[XK_F7&0xFF] = SDLK1_F7;
+	MISC_keymap[XK_F8&0xFF] = SDLK1_F8;
+	MISC_keymap[XK_F9&0xFF] = SDLK1_F9;
+	MISC_keymap[XK_F10&0xFF] = SDLK1_F10;
+	MISC_keymap[XK_F11&0xFF] = SDLK1_F11;
+	MISC_keymap[XK_F12&0xFF] = SDLK1_F12;
+	MISC_keymap[XK_F13&0xFF] = SDLK1_F13;
+	MISC_keymap[XK_F14&0xFF] = SDLK1_F14;
+	MISC_keymap[XK_F15&0xFF] = SDLK1_F15;
+
+	MISC_keymap[XK_Num_Lock&0xFF] = SDLK1_NUMLOCK;
+	MISC_keymap[XK_Caps_Lock&0xFF] = SDLK1_CAPSLOCK;
+	MISC_keymap[XK_Scroll_Lock&0xFF] = SDLK1_SCROLLOCK;
+	MISC_keymap[XK_Shift_R&0xFF] = SDLK1_RSHIFT;
+	MISC_keymap[XK_Shift_L&0xFF] = SDLK1_LSHIFT;
+	MISC_keymap[XK_Control_R&0xFF] = SDLK1_RCTRL;
+	MISC_keymap[XK_Control_L&0xFF] = SDLK1_LCTRL;
+	MISC_keymap[XK_Alt_R&0xFF] = SDLK1_RALT;
+	MISC_keymap[XK_Alt_L&0xFF] = SDLK1_LALT;
+	MISC_keymap[XK_Meta_R&0xFF] = SDLK1_RMETA;
+	MISC_keymap[XK_Meta_L&0xFF] = SDLK1_LMETA;
+	MISC_keymap[XK_Super_L&0xFF] = SDLK1_LSUPER; /* Left "Windows" */
+	MISC_keymap[XK_Super_R&0xFF] = SDLK1_RSUPER; /* Right "Windows */
+	MISC_keymap[XK_Mode_switch&0xFF] = SDLK1_MODE; /* "Alt Gr" key */
+	MISC_keymap[XK_Multi_key&0xFF] = SDLK1_COMPOSE; /* Multi-key compose */
+
+	MISC_keymap[XK_Help&0xFF] = SDLK1_HELP;
+	MISC_keymap[XK_Print&0xFF] = SDLK1_PRINT;
+	MISC_keymap[XK_Sys_Req&0xFF] = SDLK1_SYSREQ;
+	MISC_keymap[XK_Break&0xFF] = SDLK1_BREAK;
+	MISC_keymap[XK_Menu&0xFF] = SDLK1_MENU;
+	MISC_keymap[XK_Hyper_R&0xFF] = SDLK1_MENU; /* Windows "Menu" key */
+
+	init = 1;
+	return 1;
+}
+
+/* X11 modifier masks for various keys */
+static unsigned int meta_l_mask, meta_r_mask, alt_l_mask, alt_r_mask;
+static unsigned int num_mask, mode_switch_mask;
+
+static void get_modifier_masks (Display *display) {
+	static int got_masks = 0;
+	int i, j, n;
+	XModifierKeymap *xmods;
+	if (got_masks) return;
+	xmods = rXGetModifierMapping(display);
+	n = xmods->max_keypermod;
+	for (i = 3; i < 8; i++) {
+		for (j = 0; j < n; j++) {
+			KeyCode kc = xmods->modifiermap[i * n + j];
+			KeySym ks = rXKeycodeToKeysym(display, kc, 0);
+			unsigned int mask = 1 << i;
+			switch (ks) {
+				case XK_Num_Lock: num_mask = mask; break;
+				case XK_Alt_L: alt_l_mask = mask; break;
+				case XK_Alt_R: alt_r_mask = mask; break;
+				case XK_Meta_L: meta_l_mask = mask; break;
+				case XK_Meta_R: meta_r_mask = mask; break;
+				case XK_Mode_switch: mode_switch_mask = mask; break;
+			}
+		}
+	}
+	XFreeModifiermap(xmods);
+	got_masks = 1;
+}
+
+DECLSPEC Uint16 SDLCALL X11_KeyToUnicode (SDL1Key keysym, SDL1Mod modifiers) {
+	Display *display;
+	SDL1_SysWMinfo info;
+	char keybuf[32];
+	int i;
+	KeySym xsym = 0;
+	XKeyEvent xkey;
+	Uint16 unicode;
+
+	if (!init_x11_data()) return 0;
+	info.version.major = 1;
+	info.version.minor = 2;
+	info.version.patch = 15;
+	if (!SDL_GetWMInfo(&info)) return 0;
+	if (info.subsystem != SDL1_SYSWM_X11) return 0;
+	display = info.info.x11.display;
+
+	memset(&xkey, 0, sizeof(xkey));
+	xkey.display = display;
+
+	xsym = keysym; /* last resort if not found */
+	for (i = 0; i < 256; i++) {
+		if (MISC_keymap[i] == keysym) {
+			xsym = 0xFF00 | i;
+			break;
+		} else if (ODD_keymap[i] == keysym) {
+			xsym = 0xFE00 | i;
+			break;
+		}
+	}
+
+	xkey.keycode = rXKeysymToKeycode(xkey.display, xsym);
+
+	get_modifier_masks(display);
+	if (modifiers & KMOD1_SHIFT) xkey.state |= ShiftMask;
+	if (modifiers & KMOD1_CAPS) xkey.state |= LockMask;
+	if (modifiers & KMOD1_CTRL) xkey.state |= ControlMask;
+	if (modifiers & KMOD1_MODE) xkey.state |= mode_switch_mask;
+	if (modifiers & KMOD1_LALT) xkey.state |= alt_l_mask;
+	if (modifiers & KMOD1_RALT) xkey.state |= alt_r_mask;
+	if (modifiers & KMOD1_LMETA) xkey.state |= meta_l_mask;
+	if (modifiers & KMOD1_RMETA) xkey.state |= meta_r_mask;
+	if (modifiers & KMOD1_NUM) xkey.state |= num_mask;
+
+	unicode = 0;
+	if (rXLookupString(&xkey, keybuf, sizeof(keybuf), NULL, NULL))
+		unicode = (unsigned char)keybuf[0];
+	return unicode;
+}
+#else
+DECLSPEC Uint16 SDLCALL X11_KeyToUnicode (SDL1Key keysym, SDL1Mod modifiers) {
+	(void)keysym;
+	(void)modifiers;
+	return 0;
+}
+#endif
 
 /* These functions are used internally for the implementation of SDL_OPENGLBLIT. */
 /* Since we don't implement it, just do nothing here. */
