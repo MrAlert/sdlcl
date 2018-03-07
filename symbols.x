@@ -236,3 +236,8 @@ SDL2_SYMBOL(SDL_strlcat, size_t, (SDL_INOUT_Z_CAP(maxlen) char *dst, const char 
 SDL2_SYMBOL(SDL_strrev, char *, (char *str))
 SDL2_SYMBOL(SDL_strupr, char *, (char *str))
 SDL2_SYMBOL(SDL_strlwr, char *, (char *str))
+
+SDL2_SYMBOL(SDL_iconv_open, SDL_iconv_t, (const char *tocode, const char *fromcode))
+SDL2_SYMBOL(SDL_iconv_close, int, (SDL_iconv_t cd))
+SDL2_SYMBOL(SDL_iconv, size_t, (SDL_iconv_t cd, const char **inbuf, size_t *inbytesleft, char **outbuf, size_t *outbytesleft))
+SDL2_SYMBOL(SDL_iconv_string, char *, (const char *tocode, const char *fromcode, const char *inbuf, size_t inbytesleft))
