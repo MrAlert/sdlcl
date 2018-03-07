@@ -24,6 +24,14 @@
 
 #include "SDL2.h"
 
+int SDLCALL SDLCL_TimerInit (void) {
+	return rSDL_InitSubSystem(SDL_INIT_TIMER);
+}
+
+void SDLCALL SDLCL_TimerQuit (void) {
+	rSDL_QuitSubSystem(SDL_INIT_TIMER);
+}
+
 DECLSPEC Uint32 SDLCALL SDL_GetTicks (void) {
 	return rSDL_GetTicks();
 }

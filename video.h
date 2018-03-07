@@ -99,6 +99,9 @@ extern int SDLCL_virtual_height;
 extern SDL_Rect SDLCL_scale_rect;
 extern void SDLCL_UpdateGrab (void);
 
+extern DECLSPEC int SDLCALL SDL_VideoInit (const char *driver_name, Uint32 flags);
+extern DECLSPEC void SDLCALL SDL_VideoQuit (void);
+
 extern DECLSPEC void SDLCALL SDL_SetCursor (SDL1_Cursor *cursor);
 extern DECLSPEC SDL1_Cursor *SDLCALL SDL_GetCursor (void);
 extern DECLSPEC int SDLCALL SDL_ShowCursor (int toggle);

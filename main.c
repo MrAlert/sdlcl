@@ -25,6 +25,8 @@
 #include <dlfcn.h>
 
 #include "SDL2.h"
+#include "video.h"
+#include "audio.h"
 
 #define SDL1_INIT_TIMER       0x00000001
 #define SDL1_INIT_AUDIO       0x00000010
@@ -73,42 +75,80 @@ __attribute__ ((constructor)) static void initlib (void) {
 	}
 }
 
-static Uint32 initflags1to2 (Uint32 flags) {
-	Uint32 flags2 = 0;
-	if (flags & SDL1_INIT_TIMER)    flags2 |= SDL_INIT_TIMER;
-	if (flags & SDL1_INIT_AUDIO)    flags2 |= SDL_INIT_AUDIO;
-	if (flags & SDL1_INIT_VIDEO)    flags2 |= SDL_INIT_VIDEO;
-	if (flags & SDL1_INIT_JOYSTICK) flags2 |= SDL_INIT_JOYSTICK;
-	return flags2;
+extern int SDLCALL SDLCL_TimerInit (void);
+extern void SDLCALL SDLCL_TimerQuit (void);
+
+extern int SDLCALL SDLCL_JoystickInit (void);
+extern void SDLCALL SDLCL_JoystickQuit (void);
+
+static Uint32 initialized = 0;
+
+DECLSPEC int SDLCALL SDL_InitSubSystem (Uint32 flags) {
+	Uint32 needinit = flags & ~initialized;
+	if (!lib) return -1;
+	if (needinit & SDL1_INIT_TIMER) {
+		if (SDLCL_TimerInit() < 0) return -1;
+		initialized |= SDL1_INIT_TIMER;
+	}
+	if (needinit & SDL1_INIT_VIDEO) {
+		if (SDL_VideoInit(NULL, 0) < 0) return -1;
+		initialized |= SDL1_INIT_VIDEO;
+	}
+	if (needinit & SDL1_INIT_AUDIO) {
+		if (SDL_AudioInit(NULL) < 0) return -1;
+		initialized |= SDL1_INIT_AUDIO;
+	}
+	if (needinit & SDL1_INIT_JOYSTICK) {
+		if (SDLCL_JoystickInit() < 0) return -1;
+		initialized |= SDL1_INIT_JOYSTICK;
+	}
+	if (needinit & SDL1_INIT_CDROM) {
+		/* CD-ROM subsystem is stubbed */
+		initialized |= SDL1_INIT_CDROM;
+	}
+	return 0;
 }
 
 DECLSPEC int SDLCALL SDL_Init (Uint32 flags) {
 	if (!lib) return -1;
-	return rSDL_Init(initflags1to2(flags));
-}
-
-DECLSPEC int SDLCALL SDL_InitSubSystem (Uint32 flags) {
-	if (!lib) return -1;
-	return rSDL_InitSubSystem(initflags1to2(flags));
+	if (rSDL_Init(0)) return -1;
+	return SDL_InitSubSystem(flags);
 }
 
 DECLSPEC void SDLCALL SDL_QuitSubSystem (Uint32 flags) {
-	if (lib) rSDL_QuitSubSystem(initflags1to2(flags));
-}
-
-DECLSPEC void SDLCALL SDL_Quit (void) {
-	if (lib) rSDL_Quit();
+	Uint32 needquit = flags & initialized;
+	if (!lib) return;
+	if (needquit & SDL1_INIT_CDROM) {
+		/* CD-ROM subsystem is stubbed */
+		initialized &= ~SDL1_INIT_CDROM;
+	}
+	if (needquit & SDL1_INIT_JOYSTICK) {
+		SDLCL_JoystickQuit();
+		initialized &= ~SDL1_INIT_JOYSTICK;
+	}
+	if (needquit & SDL1_INIT_AUDIO) {
+		SDL_AudioQuit();
+		initialized &= ~SDL1_INIT_AUDIO;
+	}
+	if (needquit & SDL1_INIT_VIDEO) {
+		SDL_VideoQuit();
+		initialized &= ~SDL1_INIT_VIDEO;
+	}
+	if (needquit & SDL1_INIT_TIMER) {
+		SDLCL_TimerQuit();
+		initialized &= ~SDL1_INIT_TIMER;
+	}
 }
 
 DECLSPEC Uint32 SDLCALL SDL_WasInit (Uint32 flags) {
-	Uint32 ret2, ret = 0;
 	if (!lib) return 0;
-	ret2 = rSDL_WasInit(initflags1to2(flags));
-	if (ret2 & SDL_INIT_TIMER) ret |= SDL1_INIT_TIMER;
-	if (ret2 & SDL_INIT_AUDIO) ret |= SDL1_INIT_AUDIO;
-	if (ret2 & SDL_INIT_VIDEO) ret |= SDL1_INIT_VIDEO;
-	if (ret2 & SDL_INIT_JOYSTICK) ret |= SDL1_INIT_JOYSTICK;
-	return ret;
+	if (!flags) flags = SDL1_INIT_EVERYTHING;
+	return initialized & flags;
+}
+
+DECLSPEC void SDLCALL SDL_Quit (void) {
+	SDL_QuitSubSystem(SDL1_INIT_EVERYTHING);
+	if (lib) rSDL_Quit();
 }
 
 typedef enum {

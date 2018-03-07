@@ -24,6 +24,14 @@
 
 #include "SDL2.h"
 
+int SDLCALL SDLCL_JoystickInit (void) {
+	return rSDL_InitSubSystem(SDL_INIT_JOYSTICK);
+}
+
+void SDLCALL SDLCL_JoystickQuit (void) {
+	return rSDL_QuitSubSystem(SDL_INIT_JOYSTICK);
+}
+
 typedef struct SDL1_Joystick SDL1_Joystick;
 
 struct SDL1_Joystick {

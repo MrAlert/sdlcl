@@ -28,6 +28,14 @@
 #include "audio.h"
 #include "rwops.h"
 
+DECLSPEC int SDLCALL SDL_AudioInit (const char *driver_name) {
+	return rSDL_AudioInit(driver_name);
+}
+
+DECLSPEC void SDLCALL SDL_AudioQuit (void) {
+	rSDL_AudioQuit();
+}
+
 typedef struct SDL1_AudioSpec {
 	int freq;
 	Uint16 format;

@@ -32,6 +32,16 @@
 #include "version.h"
 #include "loadso.h"
 
+/* TODO: Proper initialization */
+DECLSPEC int SDLCALL SDL_VideoInit (const char *driver_name, Uint32 flags) {
+	(void)flags;
+	return rSDL_VideoInit(driver_name);
+}
+
+DECLSPEC void SDLCALL SDL_VideoQuit (void) {
+	rSDL_VideoQuit();
+}
+
 typedef struct SDL1_Proxy {
 	SDL1_Surface surface;
 	SDL1_PixelFormat format;

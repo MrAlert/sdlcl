@@ -38,6 +38,8 @@ SDL2_SYMBOL(SDL_AddTimer, SDL_TimerID, (Uint32 interval, SDL_TimerCallback callb
 SDL2_SYMBOL(SDL_RemoveTimer, SDL_bool, (SDL_TimerID id))
 
 /* Video subsystem */
+SDL2_SYMBOL(SDL_VideoInit, int, (const char *driver_name))
+SDL2_SYMBOL(SDL_VideoQuit, void, (void))
 SDL2_SYMBOL(SDL_GetCurrentVideoDriver, const char *, (void))
 SDL2_SYMBOL(SDL_GetNumVideoDisplays, int, (void))
 SDL2_SYMBOL(SDL_GetNumDisplayModes, int, (int displayIndex))
@@ -122,6 +124,8 @@ SDL2_SYMBOL(SDL_GetWindowWMInfo, SDL_bool, (SDL_Window *window, SDL_SysWMinfo *i
 SDL2_SYMBOL(SDL_SoftStretch, int, (SDL_Surface *src, const SDL_Rect *srcrect, SDL_Surface *dst, const SDL_Rect *dstrect))
 
 /* Audio subsystem */
+SDL2_SYMBOL(SDL_AudioInit, int, (const char *driver_name))
+SDL2_SYMBOL(SDL_AudioQuit, void, (void))
 SDL2_SYMBOL(SDL_OpenAudio, int, (SDL_AudioSpec *desired, SDL_AudioSpec *obtained))
 SDL2_SYMBOL(SDL_PauseAudio, void, (int pause_on))
 SDL2_SYMBOL(SDL_GetAudioStatus, SDL_AudioStatus, (void))

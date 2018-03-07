@@ -40,4 +40,7 @@
 #define AUDIO1_S16SYS  AUDIO1_S16MSB
 #endif
 
+extern DECLSPEC int SDLCALL SDL_AudioInit (const char *driver_name);
+extern DECLSPEC void SDLCALL SDL_AudioQuit (void);
+
 #endif
