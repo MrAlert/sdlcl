@@ -1271,6 +1271,27 @@ DECLSPEC int SDLCALL SDL_GetWMInfo (SDL1_SysWMinfo *info) {
 	return 0;
 }
 
+DECLSPEC int SDL_SoftStretch (SDL1_Surface *src, SDL1_Rect *srcrect, SDL1_Surface *dst, SDL1_Rect *dstrect) {
+	SDL_Rect srcrect2, dstrect2;
+	SDL_Rect *srcptr = NULL;
+	SDL_Rect *dstptr = NULL;
+	if (srcrect) {
+		srcrect2.x = srcrect->x;
+		srcrect2.y = srcrect->y;
+		srcrect2.w = srcrect->w;
+		srcrect2.h = srcrect->h;
+		srcptr = &srcrect2;
+	}
+	if (dstrect) {
+		dstrect2.x = dstrect->x;
+		dstrect2.y = dstrect->y;
+		dstrect2.w = dstrect->w;
+		dstrect2.h = dstrect->h;
+		dstptr = &dstrect2;
+	}
+	return rSDL_SoftStretch(src->sdl2_surface, srcptr, dst->sdl2_surface, dstptr);
+}
+
 /* These functions are used internally for the implementation of SDL_OPENGLBLIT. */
 /* Since we don't implement it, just do nothing here. */
 DECLSPEC void SDLCALL SDL_GL_UpdateRects (int numrects, SDL_Rect *rects) {
