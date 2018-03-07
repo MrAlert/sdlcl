@@ -1481,7 +1481,7 @@ static void get_modifier_masks (Display *display) {
 			}
 		}
 	}
-	XFreeModifiermap(xmods);
+	rXFreeModifiermap(xmods);
 	got_masks = 1;
 }
 
@@ -1495,9 +1495,9 @@ DECLSPEC Uint16 SDLCALL X11_KeyToUnicode (SDL1Key keysym, SDL1Mod modifiers) {
 	Uint16 unicode;
 
 	if (!init_x11_data()) return 0;
-	info.version.major = 1;
-	info.version.minor = 2;
-	info.version.patch = 15;
+	info.version.major = SDL1_MAJOR_VERSION;
+	info.version.minor = SDL1_MINOR_VERSION;
+	info.version.patch = SDL1_PATCHLEVEL;
 	if (!SDL_GetWMInfo(&info)) return 0;
 	if (info.subsystem != SDL1_SYSWM_X11) return 0;
 	display = info.info.x11.display;
