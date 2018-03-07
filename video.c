@@ -1187,6 +1187,14 @@ DECLSPEC int SDLCALL SDL_GL_GetAttribute (SDL1_GLattr attr, int *value) {
 	}
 }
 
+DECLSPEC void SDLCALL SDL_GL_DisableContext (void) {
+	rSDL_GL_MakeCurrent(SDLCL_window, NULL);
+}
+
+DECLSPEC void SDLCALL SDL_GL_EnableContext_Thread (void) {
+	rSDL_GL_MakeCurrent(SDLCL_window, main_glcontext);
+}
+
 DECLSPEC void SDLCALL SDL_WM_SetCaption (const char *title, const char *icon) {
 	(void)title;
 	(void)icon;
