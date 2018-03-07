@@ -4,7 +4,7 @@ TARGET = libSDL-1.2.so.0
 
 SRCS = main.c video.c yuv.c cursor.c audio.c audiocvt.c timer.c events.c \
 	keyboard.c mouse.c joystick.c rwops.c thread.c cpuinfo.c version.c \
-	cdrom.c loadso.c
+	cdrom.c loadso.c stdlib.c
 OBJS = $(SRCS:.c=.o)
 HEADERS = redir.h unredir.h
 
