@@ -594,7 +594,7 @@ DECLSPEC int SDLCALL SDL_VideoModeOK(int width, int height, int bpp, Uint32 flag
 }
 
 SDL_Window *SDLCL_window = NULL;
-static SDL_Renderer *main_renderer = NULL;;
+static SDL_Renderer *main_renderer = NULL;
 static SDL_Texture *main_texture = NULL;
 static SDL_GLContext main_glcontext = NULL;
 static SDL1_Surface *main_surface = NULL;
@@ -606,6 +606,9 @@ static Uint32 physical_palette[256];
 
 static Uint32 mode_flags = 0;
 static SDL_bool grab = SDL_FALSE;
+
+static char *window_title = NULL;
+static char *window_icon = NULL;
 
 static int scaling = 0;
 static int virtual_width, virtual_height;
@@ -840,7 +843,7 @@ DECLSPEC SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp,
 		rSDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
 		rSDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 	}
-	SDLCL_window = rSDL_CreateWindow("LOL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, flags2);
+	SDLCL_window = rSDL_CreateWindow(window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, flags2);
 	if (!SDLCL_window) return NULL;
         rSDL_GetWindowSize(SDLCL_window, &real_width, &real_height);
 	if (flags & SDL1_OPENGL) {
@@ -1196,10 +1199,27 @@ DECLSPEC void SDLCALL SDL_GL_EnableContext_Thread (void) {
 }
 
 DECLSPEC void SDLCALL SDL_WM_SetCaption (const char *title, const char *icon) {
-	(void)title;
-	(void)icon;
+	char *newstr;
+	if (title) {
+		newstr = malloc(strlen(title) + 1);
+		strcpy(newstr, title);
+		free(window_title);
+		window_title = newstr;
+	}
+	/* Although SDL2 doesn't impleemnt icon titles, save it for SDL_WM_GetCaption() */
+	if (icon) {
+		newstr = malloc(strlen(icon) + 1);
+		strcpy(newstr, icon);
+		free(window_icon);
+		window_icon = newstr;
+	}
+	if (title && SDLCL_window) rSDL_SetWindowTitle(SDLCL_window, window_title);
 }
 
+DECLSPEC void SDL_WM_GetCaption(char **title, char **icon) {
+	if (title) *title = window_title;
+	if (icon) *icon = window_icon;
+}
 
 DECLSPEC void SDLCALL SDL_WM_SetIcon (SDL_Surface *icon, Uint8 *mask) {
 	(void)icon;

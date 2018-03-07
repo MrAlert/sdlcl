@@ -86,6 +86,7 @@ SDL2_SYMBOL(SDL_CalculateGammaRamp, void, (float gamma, Uint16 *ramp))
 SDL2_SYMBOL(SDL_GetWindowGammaRamp, int, (SDL_Window *window, Uint16 *red, Uint16 *green, Uint16 *blue))
 SDL2_SYMBOL(SDL_SetWindowGammaRamp, int, (SDL_Window *window, const Uint16 *red, const Uint16 *green, const Uint16 *blue))
 
+SDL2_SYMBOL(SDL_SetWindowTitle, void, (SDL_Window *window, const char *title))
 SDL2_SYMBOL(SDL_GetWindowGrab, SDL_bool, (SDL_Window *window))
 SDL2_SYMBOL(SDL_SetWindowGrab, void, (SDL_Window *window, SDL_bool grabbed))
 SDL2_SYMBOL(SDL_MinimizeWindow, void, (SDL_Window *window))
