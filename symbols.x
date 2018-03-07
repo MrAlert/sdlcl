@@ -34,6 +34,8 @@ SDL2_SYMBOL(SDL_SetHint, SDL_bool, (const char *name, const char *value))
 /* Timer subsystem */
 SDL2_SYMBOL(SDL_GetTicks, Uint32, (void))
 SDL2_SYMBOL(SDL_Delay, void, (Uint32 ms))
+SDL2_SYMBOL(SDL_AddTimer, SDL_TimerID, (Uint32 interval, SDL_TimerCallback callback, void *param))
+SDL2_SYMBOL(SDL_RemoveTimer, SDL_bool, (SDL_TimerID id))
 
 /* Video subsystem */
 SDL2_SYMBOL(SDL_GetCurrentVideoDriver, const char *, (void))

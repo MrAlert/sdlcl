@@ -20,6 +20,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <stdint.h>
+
 #include "SDL2.h"
 
 DECLSPEC Uint32 SDLCALL SDL_GetTicks (void) {
@@ -28,4 +30,38 @@ DECLSPEC Uint32 SDLCALL SDL_GetTicks (void) {
 
 DECLSPEC void SDLCALL SDL_Delay (Uint32 ms) {
 	rSDL_Delay(ms);
+}
+
+typedef Uint32 (SDLCALL *SDL1_TimerCallback)(Uint32 interval);
+
+static SDL_TimerID old_timer = 0;
+
+static Uint32 SDLCALL old_timer_callback (Uint32 interval, void *param) {
+	SDL1_TimerCallback callback = param;
+	return callback(interval);
+}
+
+DECLSPEC int SDLCALL SDL_SetTimer (Uint32 interval, SDL1_TimerCallback callback) {
+	if (old_timer) {
+		rSDL_RemoveTimer(old_timer);
+		old_timer = 0;
+	}
+	if (interval && callback) {
+		old_timer = rSDL_AddTimer(interval, old_timer_callback, callback);
+		return old_timer ? 0 : -1;
+	} else
+		return 0;
+}
+
+typedef Uint32 (SDLCALL *SDL1_NewTimerCallback)(Uint32 interval, void *param);
+typedef struct _SDL1_TimerID *SDL1_TimerID;
+
+/* Use uintptr_t as an intermediate type for pointer->int->pointer conversions to quiet compiler warnings. */
+/* Since we don't dereference these pointers, this should be safe. */
+DECLSPEC SDL1_TimerID SDLCALL SDL_AddTimer (Uint32 interval, SDL1_NewTimerCallback callback, void *param) {
+	return (SDL1_TimerID)(uintptr_t)rSDL_AddTimer(interval, callback, param);
+}
+
+DECLSPEC SDL_bool SDLCALL SDL_RemoveTimer(SDL1_TimerID t) {
+	return rSDL_RemoveTimer((SDL_TimerID)(uintptr_t)t);
 }
