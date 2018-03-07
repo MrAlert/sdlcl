@@ -1270,3 +1270,16 @@ DECLSPEC int SDLCALL SDL_GetWMInfo (SDL1_SysWMinfo *info) {
 	}
 	return 0;
 }
+
+/* These functions are used internally for the implementation of SDL_OPENGLBLIT. */
+/* Since we don't implement it, just do nothing here. */
+DECLSPEC void SDLCALL SDL_GL_UpdateRects (int numrects, SDL_Rect *rects) {
+	(void)numrects;
+	(void)rects;
+}
+
+DECLSPEC void SDLCALL SDL_GL_Lock (void) {
+}
+
+DECLSPEC void SDLCALL SDL_GL_Unlock (void) {
+}
