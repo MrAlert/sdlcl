@@ -25,14 +25,10 @@
 
 #include "SDL2.h"
 #include "SDL_opengl.h"
+#include "video.h"
 #include "events.h"
 #include "rwops.h"
 #include "version.h"
-
-typedef struct SDL1_Rect {
-	Sint16 x, y;
-	Uint16 w, h;
-} SDL1_Rect;
 
 typedef struct SDL1_Color {
 	Uint8 r;
@@ -597,7 +593,7 @@ DECLSPEC int SDLCALL SDL_VideoModeOK(int width, int height, int bpp, Uint32 flag
 	return cbpp;
 }
 
-static SDL_Window *main_window = NULL;
+SDL_Window *SDLCL_window = NULL;
 static SDL_Renderer *main_renderer = NULL;;
 static SDL_Texture *main_texture = NULL;
 static SDL_GLContext main_glcontext = NULL;
@@ -610,7 +606,6 @@ static Uint32 physical_palette[256];
 
 static Uint32 mode_flags = 0;
 static SDL_bool grab = SDL_FALSE;
-static int cursor_showing = SDL1_ENABLE;
 
 static int scaling = 0;
 static int virtual_width, virtual_height;
@@ -649,17 +644,18 @@ static void close_window (void) {
 		rSDL_DestroyRenderer(main_renderer);
 		main_renderer = NULL;
 	}
-	if (main_window) {
-		rSDL_DestroyWindow(main_window);
-		main_window = NULL;
+	if (SDLCL_window) {
+		rSDL_DestroyWindow(SDLCL_window);
+		SDLCL_window = NULL;
 	}
 }
 
-static void update_grab (void) {
-	rSDL_ShowCursor((!scaling && cursor_showing) ? SDL_ENABLE : SDL_DISABLE);
-	if (main_window)
-		rSDL_SetWindowGrab(main_window, (mode_flags & SDL1_FULLSCREEN) ? SDL_TRUE : grab);
-	if (/*grab &&*/ !cursor_showing)
+void SDLCL_UpdateGrab (void) {
+	int showing = SDL_ShowCursor(SDL1_QUERY);
+	rSDL_ShowCursor((!scaling && showing) ? SDL_ENABLE : SDL_DISABLE);
+	if (SDLCL_window)
+		rSDL_SetWindowGrab(SDLCL_window, (mode_flags & SDL1_FULLSCREEN) ? SDL_TRUE : grab);
+	if (/*grab &&*/ !showing)
 		rSDL_SetRelativeMouseMode(SDL_TRUE);
 	else
 		rSDL_SetRelativeMouseMode(SDL_FALSE);
@@ -718,7 +714,7 @@ static int init_scale (void) {
 		texh = next_pow2(main_surface->h);
 		scale_texcoord[2] = (GLfloat)main_surface->w / (GLfloat)texw * 2.0;
 		scale_texcoord[5] = (GLfloat)main_surface->h / (GLfloat)texh * 2.0;
-		scale_glcontext = rSDL_GL_CreateContext(main_window);
+		scale_glcontext = rSDL_GL_CreateContext(SDLCL_window);
 		if (!scale_glcontext) return 0;
 		scale_glBitmap = rSDL_GL_GetProcAddress("glBitmap");
 		if (!scale_glBitmap) return 0;
@@ -784,7 +780,7 @@ static int init_scale (void) {
 		scale_glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 		scale_glPixelZoom(1, -1);
 		free(texp);
-		rSDL_GL_MakeCurrent(main_window, main_glcontext);
+		rSDL_GL_MakeCurrent(SDLCL_window, main_glcontext);
 		main_glFinish = rSDL_GL_GetProcAddress("glFinish");
 		if (!main_glFinish) return 0;
 		main_glViewport = rSDL_GL_GetProcAddress("glViewport");
@@ -794,47 +790,20 @@ static int init_scale (void) {
 	return 1;
 }
 
-#define X 255, 255
-#define O 0, 255
-#define _ 0, 0
-static const Uint8 cursor_image[512] = {
-	_,_,X,X,_,_,_,_,_,_,_,_,_,_,_,_,
-	_,_,X,O,X,_,_,_,_,_,_,_,_,_,_,_,
-	_,_,X,O,O,X,_,_,_,_,_,_,_,_,_,_,
-	_,_,X,O,O,O,X,_,_,_,_,_,_,_,_,_,
-	_,_,X,O,O,O,O,X,_,_,_,_,_,_,_,_,
-	_,_,X,O,O,O,O,O,X,_,_,_,_,_,_,_,
-	_,_,X,O,O,O,O,O,O,X,_,_,_,_,_,_,
-	_,_,X,O,O,O,O,O,O,O,X,_,_,_,_,_,
-	_,_,X,O,O,O,O,O,O,O,O,X,_,_,_,_,
-	_,_,X,O,O,O,O,O,X,X,X,X,_,_,_,_,
-	_,_,X,O,O,X,O,O,X,_,_,_,_,_,_,_,
-	_,_,X,O,X,_,X,O,O,X,_,_,_,_,_,_,
-	_,_,X,X,_,_,X,O,O,X,_,_,_,_,_,_,
-	_,_,_,_,_,_,_,X,O,O,X,_,_,_,_,_,
-	_,_,_,_,_,_,_,X,O,O,X,_,_,_,_,_,
-	_,_,_,_,_,_,_,_,X,X,_,_,_,_,_,_
-};
-#undef X
-#undef O
-#undef _
-static const int cursor_hot_x = 3;
-static const int cursor_hot_y = 1;
-static const int cursor_width = 16;
-static const int cursor_height = 16;
-
 static void gl_scale (void) {
+	SDL1_Cursor *cursor;
 	int x, y;
 	main_glFinish();
-	rSDL_GL_MakeCurrent(main_window, scale_glcontext);
-	if (cursor_showing) {
+	rSDL_GL_MakeCurrent(SDLCL_window, scale_glcontext);
+	if (SDL_ShowCursor(SDL1_QUERY)) {
+		cursor = SDL_GetCursor();
 		SDL_GetMouseState(&x, &y);
 		scale_glViewport(0, 0, virtual_width, virtual_height);
 		scale_glEnable(GL_BLEND);
 		scale_glDisable(GL_TEXTURE_2D);
 		scale_glRasterPos2f(-1, 1);
-		scale_glBitmap(0, 0, 0, 0, x - cursor_hot_x, -(y - cursor_hot_y), NULL);
-		scale_glDrawPixels(cursor_width, cursor_height, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, cursor_image);
+		scale_glBitmap(0, 0, 0, 0, x - cursor->hot_x, -(y - cursor->hot_y), NULL);
+		scale_glDrawPixels(cursor->area.w, cursor->area.h, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, cursor->image);
 		scale_glEnable(GL_TEXTURE_2D);
 		scale_glDisable(GL_BLEND);
 		scale_glViewport(scale_rect.x, scale_rect.y, scale_rect.w, scale_rect.h);
@@ -844,7 +813,7 @@ static void gl_scale (void) {
 	scale_glClear(GL_COLOR_BUFFER_BIT);
 	scale_glDrawArrays(GL_TRIANGLES, 0, 3);
 	scale_glFinish();
-	rSDL_GL_MakeCurrent(main_window, main_glcontext);
+	rSDL_GL_MakeCurrent(SDLCL_window, main_glcontext);
 }
 
 DECLSPEC SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp, Uint32 flags) {
@@ -871,17 +840,17 @@ DECLSPEC SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp,
 		rSDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
 		rSDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 	}
-	main_window = rSDL_CreateWindow("LOL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, flags2);
-	if (!main_window) return NULL;
-        rSDL_GetWindowSize(main_window, &real_width, &real_height);
+	SDLCL_window = rSDL_CreateWindow("LOL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, flags2);
+	if (!SDLCL_window) return NULL;
+        rSDL_GetWindowSize(SDLCL_window, &real_width, &real_height);
 	if (flags & SDL1_OPENGL) {
-		main_glcontext = rSDL_GL_CreateContext(main_window);
+		main_glcontext = rSDL_GL_CreateContext(SDLCL_window);
 		if (!main_glcontext) {
 			close_window();
 			return NULL;
 		}
 	} else {
-		main_renderer = rSDL_CreateRenderer(main_window, -1, 0);
+		main_renderer = rSDL_CreateRenderer(SDLCL_window, -1, 0);
 		if (!main_renderer) {
 			close_window();
 			return NULL;
@@ -926,7 +895,8 @@ DECLSPEC SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp,
 		}
 	}
 	SDLCL_SetMouseRange(width, height);
-	update_grab();
+	SDLCL_UpdateGrab();
+	SDL_SetCursor(NULL);
 	return main_surface;
 }
 
@@ -1048,10 +1018,11 @@ DECLSPEC int SDLCALL SDL_Flip (SDL1_Surface *screen) {
 				dest[j] = physical_palette[src[j]];
 		}
 	}
+	/* TODO: Draw mouse cursor when scaling */
 	rSDL_UnlockTexture(main_texture);
 	SDL_UnlockSurface(main_surface);
 	rSDL_RenderClear(main_renderer);
-	if (real_width != main_surface->w || real_height != main_surface->h)
+	if (scaling)
 		rSDL_RenderCopy(main_renderer, main_texture, NULL, &scale_rect);
 	else
 		rSDL_RenderCopy(main_renderer, main_texture, NULL, NULL);
@@ -1076,29 +1047,13 @@ DECLSPEC void SDLCALL SDL_UpdateRects(SDL1_Surface *screen, int numrects, SDL1_R
 	SDL_Flip(screen);
 }
 
-DECLSPEC int SDLCALL SDL_ShowCursor (int toggle) {
-	int ret = cursor_showing;
-	if (toggle != SDL1_QUERY)
-		cursor_showing = toggle;
-	update_grab();
-	return ret;
-}
-
-DECLSPEC void SDLCALL SDL_WarpMouse (Uint16 x, Uint16 y) {
-	int offx, offy;
-	if (main_window) {
-		SDLCL_GetMouseOffset(&offx, &offy);
-		rSDL_WarpMouseInWindow(main_window, x + offx, y + offy);
-	}
-}
-
 DECLSPEC int SDLCALL SDL_GetGammaRamp (Uint16 *redtable, Uint16 *greentable, Uint16 *bluetable) {
-	if (main_window) return rSDL_GetWindowGammaRamp(main_window, redtable, greentable, bluetable);
+	if (SDLCL_window) return rSDL_GetWindowGammaRamp(SDLCL_window, redtable, greentable, bluetable);
 	else return -1;
 }
 
 DECLSPEC int SDLCALL SDL_SetGammaRamp (Uint16 *redtable, Uint16 *greentable, Uint16 *bluetable) {
-	if (main_window) return rSDL_SetWindowGammaRamp(main_window, redtable, greentable, bluetable);
+	if (SDLCL_window) return rSDL_SetWindowGammaRamp(SDLCL_window, redtable, greentable, bluetable);
 	else return -1;
 }
 
@@ -1122,7 +1077,7 @@ DECLSPEC void *SDLCALL SDL_GL_GetProcAddress (const char *proc) {
 
 DECLSPEC void SDLCALL SDL_GL_SwapBuffers (void) {
 	if (scaling) gl_scale();
-	rSDL_GL_SwapWindow(main_window);
+	rSDL_GL_SwapWindow(SDLCL_window);
 }
 
 typedef enum {
@@ -1257,12 +1212,12 @@ DECLSPEC SDL1_GrabMode SDLCALL SDL_WM_GrabInput (SDL1_GrabMode mode) {
 		case SDL1_GRAB_ON: grab = SDL_TRUE; break;
 		default: break;
 	}
-	update_grab();
+	SDLCL_UpdateGrab();
 	return ret;
 }
 
 DECLSPEC int SDLCALL SDL_WM_IconifyWindow (void) {
-	rSDL_MinimizeWindow(main_window);
+	rSDL_MinimizeWindow(SDLCL_window);
 	return 1;
 }
 
@@ -1313,9 +1268,9 @@ static void noop (void) {
 
 DECLSPEC int SDLCALL SDL_GetWMInfo (SDL1_SysWMinfo *info) {
 	SDL_SysWMinfo info2;
-	if (!main_window) return 0;
+	if (!SDLCL_window) return 0;
 	SDL_VERSION(&info2.version);
-	if (rSDL_GetWindowWMInfo(main_window, &info2)) {
+	if (rSDL_GetWindowWMInfo(SDLCL_window, &info2)) {
 #if defined(SDL_VIDEO_DRIVER_X11)
 		if (info2.subsystem == SDL_SYSWM_X11 && compare_ver(info->version, 1, 0, 0)) {
 			info->subsystem = SDL1_SYSWM_X11;
