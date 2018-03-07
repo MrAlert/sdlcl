@@ -120,6 +120,7 @@ SDL2_SYMBOL(SDL_GetWindowWMInfo, SDL_bool, (SDL_Window *window, SDL_SysWMinfo *i
 /* Audio subsystem */
 SDL2_SYMBOL(SDL_OpenAudio, int, (SDL_AudioSpec *desired, SDL_AudioSpec *obtained))
 SDL2_SYMBOL(SDL_PauseAudio, void, (int pause_on))
+SDL2_SYMBOL(SDL_GetAudioStatus, SDL_AudioStatus, (void))
 SDL2_SYMBOL(SDL_MixAudio, void, (Uint8 *dst, const Uint8 *src, Uint32 len, int volume))
 SDL2_SYMBOL(SDL_LockAudio, void, (void))
 SDL2_SYMBOL(SDL_UnlockAudio, void, (void))

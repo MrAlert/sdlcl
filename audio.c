@@ -89,6 +89,21 @@ DECLSPEC void SDLCALL SDL_PauseAudio (int pause_on) {
 	rSDL_PauseAudio(pause_on);
 }
 
+typedef enum {
+	SDL1_AUDIO_STOPPED = 0,
+	SDL1_AUDIO_PLAYING,
+	SDL1_AUDIO_PAUSED
+} SDL1_audiostatus;
+
+DECLSPEC SDL1_audiostatus SDLCALL SDL_GetAudioStatus (void) {
+	switch (rSDL_GetAudioStatus()) {
+		case SDL_AUDIO_STOPPED: return SDL1_AUDIO_STOPPED;
+		case SDL_AUDIO_PLAYING: return SDL1_AUDIO_PLAYING;
+		case SDL_AUDIO_PAUSED: return SDL1_AUDIO_PAUSED;
+		default: return SDL1_AUDIO_STOPPED;
+	}
+}
+
 DECLSPEC void SDLCALL SDL_MixAudio (Uint8 *dst, Uint8 *src, Uint32 len, int volume) {
 	rSDL_MixAudio(dst, src, len, volume);
 }
