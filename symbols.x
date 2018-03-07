@@ -137,6 +137,8 @@ SDL2_SYMBOL(SDL_FreeWAV, void, (Uint8 *audio_buf))
 /* Events subsystem */
 SDL2_SYMBOL(SDL_JoystickEventState, int, (int state))
 SDL2_SYMBOL(SDL_GetModState, SDL_Keymod, (void))
+SDL2_SYMBOL(SDL_SetModState, void, (SDL_Keymod modstate))
+SDL2_SYMBOL(SDL_GetKeyName, const char *, (SDL_Keycode key))
 SDL2_SYMBOL(SDL_GetMouseState, Uint32, (int *x, int *y))
 SDL2_SYMBOL(SDL_GetRelativeMouseState, Uint32, (int *x, int *y))
 SDL2_SYMBOL(SDL_StartTextInput, void, (void))
