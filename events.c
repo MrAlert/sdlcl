@@ -157,8 +157,28 @@ static struct {
 
 static SDL1_Event unicode_event = { SDL1_NOEVENT };
 
+static Uint8 event_state[SDL1_NUM_EVENTS] = {
+	SDL1_ENABLE, SDL1_ENABLE, SDL1_ENABLE, SDL1_ENABLE,
+	SDL1_ENABLE, SDL1_ENABLE, SDL1_ENABLE, SDL1_ENABLE,
+	SDL1_ENABLE, SDL1_ENABLE, SDL1_ENABLE, SDL1_ENABLE,
+	SDL1_ENABLE, SDL1_ENABLE, SDL1_ENABLE, SDL1_ENABLE,
+	SDL1_ENABLE, SDL1_ENABLE, SDL1_ENABLE, SDL1_ENABLE,
+	SDL1_ENABLE, SDL1_ENABLE, SDL1_ENABLE, SDL1_ENABLE,
+	SDL1_ENABLE, SDL1_ENABLE, SDL1_ENABLE, SDL1_ENABLE,
+	SDL1_ENABLE, SDL1_ENABLE, SDL1_ENABLE, SDL1_ENABLE
+};
+
+DECLSPEC Uint8 SDL_EventState (Uint8 type, int state) {
+	int ret;
+	if (type >= SDL1_NUM_EVENTS) return SDL1_IGNORE;
+	ret = event_state[type];
+	if (state != SDL_QUERY)
+		event_state[type] = state;
+	return ret;
+}
+
 static void add_event_filtered (SDL1_Event *event) {
-	if (!event_filter || event_filter(event)) SDL_PushEvent(event);
+	if (event_state[event->type] && (!event_filter || event_filter(event))) SDL_PushEvent(event);
 }
 
 /* Copyright (c) 2008-2010 Bjoern Hoehrmann <bjoern@hoehrmann.de> */

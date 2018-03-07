@@ -102,6 +102,8 @@ SDL2_SYMBOL(SDL_CreateTexture, SDL_Texture *, (SDL_Renderer *renderer, Uint32 fo
 SDL2_SYMBOL(SDL_SetTextureBlendMode, int, (SDL_Texture *texture, SDL_BlendMode blendMode))
 SDL2_SYMBOL(SDL_LockTexture, int, (SDL_Texture *texture, const SDL_Rect *rect, void **pixels, int *pitch))
 SDL2_SYMBOL(SDL_UnlockTexture, void, (SDL_Texture *texture))
+SDL2_SYMBOL(SDL_UpdateTexture, int, (SDL_Texture *texture, const SDL_Rect *rect, const void *pixels, int pitch))
+SDL2_SYMBOL(SDL_UpdateYUVTexture, int, (SDL_Texture *texture, const SDL_Rect *rect, const Uint8* Yplane, int Ypitch, const Uint8* Uplane, int Upitch, const Uint8* Vplane, int Vpitch))
 SDL2_SYMBOL(SDL_DestroyTexture, void, (SDL_Texture *texture))
 
 SDL2_SYMBOL(SDL_GL_LoadLibrary, int, (const char *path))
@@ -143,6 +145,7 @@ SDL2_SYMBOL(SDL_PumpEvents, void, (void))
 SDL2_SYMBOL(SDL_PushEvent, int, (SDL_Event * event))
 SDL2_SYMBOL(SDL_SetEventFilter, void, (SDL_EventFilter filter, void *userdata))
 SDL2_SYMBOL(SDL_GetEventFilter, SDL_bool, (SDL_EventFilter *filter, void **userdata))
+SDL2_SYMBOL(SDL_EventState, Uint8, (Uint32 type, int state))
 
 /* Joystick subsystem */
 SDL2_SYMBOL(SDL_NumJoysticks, int, (void))

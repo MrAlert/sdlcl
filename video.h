@@ -30,6 +30,54 @@ typedef struct SDL1_Rect {
 	Uint16 w, h;
 } SDL1_Rect;
 
+typedef struct SDL1_Color {
+	Uint8 r;
+	Uint8 g;
+	Uint8 b;
+	Uint8 unused;
+} SDL1_Color;
+
+typedef struct SDL1_Palette {
+	int ncolors;
+	SDL1_Color *colors;
+} SDL1_Palette;
+
+typedef struct SDL1_PixelFormat {
+	SDL1_Palette *palette;
+	Uint8 BitsPerPixel;
+	Uint8 BytesPerPixel;
+	Uint8 Rloss;
+	Uint8 Gloss;
+	Uint8 Bloss;
+	Uint8 Aloss;
+	Uint8 Rshift;
+	Uint8 Gshift;
+	Uint8 Bshift;
+	Uint8 Ashift;
+	Uint32 Rmask;
+	Uint32 Gmask;
+	Uint32 Bmask;
+	Uint32 Amask;
+	Uint32 colorkey;
+	Uint8 alpha;
+} SDL1_PixelFormat;
+
+typedef struct SDL1_Surface {
+	Uint32 flags;
+	SDL1_PixelFormat *format;
+	int w, h;
+	Uint16 pitch;
+	void *pixels;
+	int offset;
+	SDL_Surface *sdl2_surface;
+	SDL1_Rect clip_rect;
+	Uint32 unused1;
+	Uint32 private3;
+	void *private4;
+	unsigned int private5;
+	int refcount;
+} SDL1_Surface;
+
 typedef struct SDL1_Cursor {
 	SDL1_Rect area;
 	Sint16 hot_x, hot_y;
@@ -43,6 +91,12 @@ typedef struct SDL1_Cursor {
 } SDL1_Cursor;
 
 extern SDL_Window *SDLCL_window;
+extern SDL_Renderer *SDLCL_renderer;
+extern SDL1_Surface *SDLCL_surface;
+extern int SDLCL_scaling;
+extern int SDLCL_virtual_width;
+extern int SDLCL_virtual_height;
+extern SDL_Rect SDLCL_scale_rect;
 extern void SDLCL_UpdateGrab (void);
 
 extern DECLSPEC void SDLCALL SDL_SetCursor (SDL1_Cursor *cursor);

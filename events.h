@@ -25,6 +25,7 @@
 
 #include "SDL2.h"
 
+#define SDL1_IGNORE  0
 #define SDL1_DISABLE 0
 #define SDL1_ENABLE  1
 #define SDL1_QUERY   -1
