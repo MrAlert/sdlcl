@@ -799,6 +799,7 @@ DECLSPEC SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp,
 		}
 	}
 	rSDL_PixelFormatEnumToMasks(pixfmt, &bpp, &Rmask, &Gmask, &Bmask, &Amask);
+	Amask = 0;
 	close_window();
 	if (flags & SDL1_OPENGL) {
 		/* Use compatibility profile for OpenGL */
