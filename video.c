@@ -38,7 +38,10 @@ DECLSPEC int SDLCALL SDL_VideoInit (const char *driver_name, Uint32 flags) {
 	return rSDL_VideoInit(driver_name);
 }
 
+static void close_window (void);
+
 DECLSPEC void SDLCALL SDL_VideoQuit (void) {
+	close_window();
 	rSDL_VideoQuit();
 }
 
