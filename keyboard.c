@@ -596,4 +596,14 @@ void SDLCALL SDLCL_ProcessKeyEvent (SDL_Event *event2) {
 	event.key.keysym = keysym2to1(event2->key.keysym);
 	key_state[event.key.keysym.sym] = event.key.state;
 	SDLCL_ProcessEvent(&event);
+	if (event2->type == SDL_KEYDOWN) {
+		switch (event2->key.keysym.sym) {
+			case SDLK_BACKSPACE: SDLCL_PushUnicode(0x08); break;
+			case SDLK_TAB: SDLCL_PushUnicode(0x09); break;
+			case SDLK_RETURN: SDLCL_PushUnicode(0x0D); break;
+			case SDLK_ESCAPE: SDLCL_PushUnicode(0x1B); break;
+			case SDLK_DELETE: SDLCL_PushUnicode(0x7F); break;
+			default: break;
+		}
+	}
 }

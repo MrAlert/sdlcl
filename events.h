@@ -383,6 +383,7 @@ typedef union SDL1_Event {
 
 /* General event functions */
 extern void SDLCALL SDLCL_ProcessEvent (SDL1_Event *event);
+extern void SDLCALL SDLCL_PushUnicode (Uint16 unicode);
 
 /* Keyboard event functions */
 extern void SDLCALL SDLCL_ProcessKeyEvent (SDL_Event *event2);

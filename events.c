@@ -25,19 +25,19 @@
 #include "SDL2.h"
 #include "events.h"
 
-static int unicode = 0;
+static int unicode_enabled = 0;
 
 DECLSPEC int SDLCALL SDL_EnableUNICODE (int enable) {
-	int oldunicode = unicode;
+	int oldunicode = unicode_enabled;
 	switch (enable) {
 		case 0:
 		case 1:
-			unicode = enable;
+			unicode_enabled = enable;
 		default:
 			break;
 	}
-	if (unicode != oldunicode) {
-		if (unicode) rSDL_StartTextInput();
+	if (unicode_enabled != oldunicode) {
+		if (unicode_enabled) rSDL_StartTextInput();
 		else rSDL_StopTextInput();
 	}
 	return oldunicode;
@@ -216,8 +216,9 @@ static Uint32 utf8_decode (Uint32 *state, Uint32 *codep, Uint32 byte) {
 	return *state;
 }
 
-static void push_unicode (Uint16 unicode) {
+void SDLCALL SDLCL_PushUnicode (Uint16 unicode) {
 	int tail;
+	if (!unicode_enabled) return;
 	tail = (unicode_queue.tail + 1) % MAXUNICODE;
 	if (tail == unicode_queue.head) return;
 	unicode_queue.unicode[unicode_queue.tail] = unicode;
@@ -230,10 +231,10 @@ static void push_text (const char *text) {
 	while (*text) {
 		if (utf8_decode(&state, &codepoint, *((Uint8 *)(text++)))) continue;
 		if (codepoint > 0xFFFF) {
-			push_unicode(0xD7C0 + (codepoint >> 10));
-			push_unicode(0xDC00 + (codepoint & 0x3FF));
+			SDLCL_PushUnicode(0xD7C0 + (codepoint >> 10));
+			SDLCL_PushUnicode(0xDC00 + (codepoint & 0x3FF));
 		} else {
-			push_unicode(codepoint);
+			SDLCL_PushUnicode(codepoint);
 		}
 	}
 }
