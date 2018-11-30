@@ -20,31 +20,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <dlfcn.h>
+#ifndef SDLCL_MAIN_H
+#define SDLCL_MAIN_H
 
 #include "SDL2.h"
-#include "loadso.h"
 
-DECLSPEC void *SDLCALL SDL_LoadObject (const char *sofile) {
-	void *handle = dlopen(sofile, RTLD_NOW);
-	const char *loaderror;
-	if (!handle) {
-		loaderror = (char *)dlerror();
-		SDL_SetError("Failed loading %s: %s", sofile, loaderror);
-	}
-	return handle;
-}
+extern DECLSPEC void SDLCALL SDL_SetError (const char *fmt, ...);
 
-DECLSPEC void *SDLCALL SDL_LoadFunction (void *handle, const char *name) {
-	void *symbol = dlsym(handle, name);
-	const char *loaderror;
-	if (!symbol) {
-		loaderror = (char *)dlerror();
-		SDL_SetError("Failed loading %s: %s", name, loaderror);
-	}
-	return symbol;
-}
-
-DECLSPEC void SDLCALL SDL_UnloadObject (void *handle) {
-	if (handle) dlclose(handle);
-}
+#endif
