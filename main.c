@@ -54,6 +54,27 @@ __attribute__ ((destructor)) static void quitlib (void) {
 #undef SDL2_SYMBOL
 }
 
+/* SDL 2 calls XInitThreads() when initializing X11 video, but SDL 1.2 does not.
+ * This normally isn't an issue (XInitThreads() is only needed to use libX11
+ * in multiple threads, and doesn't do anything otherwise) but XInitThreads()
+ * must be called before any other libX11 function if it is to be called at all,
+ * and some programs use libX11 for things before initializing SDL (usually a
+ * configuration UI using GTK or Qt or something). Calling XInitThreads()
+ * afterwards often results in a segfault on the next libX11 call. In order to
+ * avoid this, load libX11 and call XInitThreads() before the program even
+ * starts.
+ */
+static void initx11threads() {
+	static void *libx11 = NULL;
+	void (*xinitthreads)(void);
+	if (!libx11) {
+		libx11 = SDL_LoadObject("libX11.so.6");
+		if (!libx11) return;
+		xinitthreads = SDL_LoadFunction(libx11, "XInitThreads");
+		if (xinitthreads) xinitthreads();
+	}
+}
+
 __attribute__ ((constructor)) static void initlib (void) {
 	void *handle;
 	if (!lib) {
@@ -72,6 +93,7 @@ __attribute__ ((constructor)) static void initlib (void) {
 #undef SDL2_SYMBOL
 		lib = handle;
 	}
+	initx11threads();
 }
 
 extern int SDLCALL SDLCL_TimerInit (void);
