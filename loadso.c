@@ -24,6 +24,7 @@
 
 #include "SDL2.h"
 #include "loadso.h"
+#include "main.h"
 
 DECLSPEC void *SDLCALL SDL_LoadObject (const char *sofile) {
 	void *handle = dlopen(sofile, RTLD_NOW);

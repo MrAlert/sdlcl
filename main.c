@@ -22,11 +22,11 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <dlfcn.h>
 
 #include "SDL2.h"
 #include "video.h"
 #include "audio.h"
+#include "loadso.h"
 
 #define SDL1_INIT_TIMER       0x00000001
 #define SDL1_INIT_AUDIO       0x00000010
@@ -43,35 +43,34 @@ static void *lib = NULL;
 #include "symbols.x"
 #undef SDL2_SYMBOL
 
-static void load_error (const char *symbol);
-
 __attribute__ ((destructor)) static void quitlib (void) {
 	if (lib) {
-		dlclose(lib);
+		SDL_UnloadObject(lib);
 		lib = NULL;
+	}
 #define SDL2_SYMBOL(name, ret, param) \
-		r##name = NULL;
+	r##name = NULL;
 #include "symbols.x"
 #undef SDL2_SYMBOL
-	}
 }
 
 __attribute__ ((constructor)) static void initlib (void) {
+	void *handle;
 	if (!lib) {
-		lib = dlopen("libSDL2-2.0.so.0", RTLD_LAZY | RTLD_LOCAL);
-		if (!lib) {
-			load_error(NULL);
+		handle = SDL_LoadObject("libSDL2-2.0.so.0");
+		if (!handle) {
 			return;
 		}
 #define SDL2_SYMBOL(name, ret, param) \
-		r##name = dlsym(lib, #name); \
+		r##name = SDL_LoadFunction(handle, #name); \
 		if (!r##name) { \
+			SDL_UnloadObject(handle); \
 			quitlib(); \
-			load_error(#name); \
 			return; \
 		}
 #include "symbols.x"
 #undef SDL2_SYMBOL
+		lib = handle;
 	}
 }
 
@@ -200,9 +199,4 @@ DECLSPEC void SDLCALL SDL_Error (SDL1_errorcode code) {
 	}
 	if (lib) rSDL_Error(code2);
 	else SDL_SetError("SDL error code %d", (int)code);
-}
-
-static void load_error (const char *symbol) {
-	if (symbol) SDL_SetError("Error loading SDL2 symbol %s", symbol);
-	else SDL_SetError("Error loading SDL2: %s", dlerror());
 }
