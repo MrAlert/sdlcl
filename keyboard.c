@@ -341,8 +341,8 @@ DECLSPEC char *SDL_GetKeyName (SDL1Key key) {
 
 static SDL1_keysym keysym2to1 (SDL_Keysym keysym) {
 	SDL1_keysym ret;
-	/* scancode is supposed to be hardware-dependent, so just put this here */
-	ret.scancode = keysym.scancode;
+	/* Hardware scancodes are not available from SDL 2.0, so set it to 0. */
+	ret.scancode = 0;
 	ret.mod = keymod2to1(keysym.mod);
 	/* Unicode translation handled elsewhere */
 	ret.unicode = 0;
