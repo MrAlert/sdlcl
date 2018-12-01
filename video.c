@@ -438,14 +438,30 @@ static SDL1_VideoInfo video_info = {
 	0,          /* blit_sw_A */
 	0,          /* blit_fill */
 	0,          /* UnusedBits3 */
-	262144,     /* video_mem */
+	0,          /* video_mem */
 	&video_fmt, /* vfmt */
 	640,        /* current_w */
 	480         /* current_h */
 };
 
 DECLSPEC SDL1_VideoInfo *SDLCALL SDL_GetVideoInfo (void) {
-	return &video_info;
+	SDL_DisplayMode mode;
+	int bpp;
+	if (!rSDL_GetDesktopDisplayMode(0, &mode)) {
+		rSDL_PixelFormatEnumToMasks(mode.format, &bpp,
+			&video_fmt.Rmask,
+			&video_fmt.Gmask,
+			&video_fmt.Bmask,
+			&video_fmt.Amask);
+		video_fmt.BitsPerPixel = bpp;
+		video_fmt.BytesPerPixel = bpp / 8;
+		process_masks(&video_fmt);
+		video_info.current_w = mode.w;
+		video_info.current_h = mode.h;
+		return &video_info;
+	} else {
+		return NULL;
+	}
 }
 
 DECLSPEC char *SDLCALL SDL_VideoDriverName (char *namebuf, int maxlen) {
@@ -527,7 +543,7 @@ DECLSPEC SDL1_Rect **SDLCALL SDL_ListModes (SDL1_PixelFormat *format, Uint32 fla
 
 DECLSPEC int SDLCALL SDL_VideoModeOK(int width, int height, int bpp, Uint32 flags) {
 	int numdisp = rSDL_GetNumVideoDisplays();
-	int i, j, nummode, tbpp, cbpp = 0;
+	int i, j, nummode, tbpp, tbypp, cbpp = 0;
 	SDL_DisplayMode mode;
 	if (vidflags1to2(flags) == SDL_WINDOW_INVALID) return 0;
 	if (bpp < 8 || bpp > 32) return 0;
@@ -544,6 +560,8 @@ DECLSPEC int SDLCALL SDL_VideoModeOK(int width, int height, int bpp, Uint32 flag
 			if (!rSDL_GetDisplayMode(i, j, &mode)) {
 				if (mode.w >= width && mode.h >= height) {
 					tbpp = SDL_BITSPERPIXEL(mode.format);
+					tbypp = SDL_BYTESPERPIXEL(mode.format) * 8;
+					if (tbypp >= tbpp + 8) tbpp = tbypp;
 					if (cbpp / 8 != bpp / 8 || tbpp / 8 == bpp / 8) {
 						/* Try to match byte-per-pixel count first */
 						if (cbpp / 8 != bpp / 8 && tbpp / 8 == bpp / 8) cbpp = tbpp;
@@ -855,6 +873,7 @@ DECLSPEC SDL1_Surface *SDLCALL SDL_SetVideoMode (int width, int height, int bpp,
 		return NULL;
 	}
 	mode_flags = flags;
+	SDLCL_surface->flags |= flags & SDL1_FULLSCREEN;
 	SDLCL_scaling = (real_width != width || real_height != height);
 	if (SDLCL_scaling) {
 		SDLCL_virtual_width = width;
