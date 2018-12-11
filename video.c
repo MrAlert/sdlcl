@@ -659,7 +659,6 @@ static int next_pow2 (int x) {
 	return x + 1;
 }
 
-static void (APIENTRY *main_glFinish)(void);
 static void (APIENTRY *scale_glBitmap)(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte *bitmap);
 static void (APIENTRY *scale_glClear)(GLbitfield mask);
 static void (APIENTRY *scale_glCopyTexSubImage2D)(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
@@ -667,7 +666,6 @@ static void (APIENTRY *scale_glDisable)(GLenum cap);
 static void (APIENTRY *scale_glDrawArrays)(GLenum mode, GLint first, GLsizei count);
 static void (APIENTRY *scale_glDrawPixels)(GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *data);
 static void (APIENTRY *scale_glEnable)(GLenum cap);
-static void (APIENTRY *scale_glFinish)(void);
 static void (APIENTRY *scale_glRasterPos2f)(GLfloat x, GLfloat y);
 static void (APIENTRY *scale_glViewport)(GLint x, GLint y, GLsizei width, GLsizei height);
 
@@ -723,8 +721,6 @@ static int init_scale (void) {
 		if (!scale_glEnable) return 0;
 		scale_glEnableClientState = rSDL_GL_GetProcAddress("glEnableClientState");
 		if (!scale_glEnableClientState) return 0;
-		scale_glFinish = rSDL_GL_GetProcAddress("glFinish");
-		if (!scale_glFinish) return 0;
 		scale_glGenTextures = rSDL_GL_GetProcAddress("glGenTextures");
 		if (!scale_glGenTextures) return 0;
 		scale_glLoadIdentity = rSDL_GL_GetProcAddress("glLoadIdentity");
@@ -768,8 +764,6 @@ static int init_scale (void) {
 		scale_glPixelZoom(1, -1);
 		free(texp);
 		rSDL_GL_MakeCurrent(SDLCL_window, main_glcontext);
-		main_glFinish = rSDL_GL_GetProcAddress("glFinish");
-		if (!main_glFinish) return 0;
 		main_glViewport = rSDL_GL_GetProcAddress("glViewport");
 		if (!main_glViewport) return 0;
 		main_glViewport(0, 0, SDLCL_surface->w, SDLCL_surface->h);
@@ -780,7 +774,6 @@ static int init_scale (void) {
 static void gl_scale (void) {
 	SDL1_Cursor *cursor;
 	int x, y;
-	main_glFinish();
 	rSDL_GL_MakeCurrent(SDLCL_window, scale_glcontext);
 	if (SDL_ShowCursor(SDL1_QUERY)) {
 		cursor = SDL_GetCursor();
@@ -796,10 +789,8 @@ static void gl_scale (void) {
 		scale_glViewport(SDLCL_scale_rect.x, SDLCL_scale_rect.y, SDLCL_scale_rect.w, SDLCL_scale_rect.h);
 	}
 	scale_glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, SDLCL_surface->w, SDLCL_surface->h);
-	scale_glFinish();
 	scale_glClear(GL_COLOR_BUFFER_BIT);
 	scale_glDrawArrays(GL_TRIANGLES, 0, 3);
-	scale_glFinish();
 	rSDL_GL_MakeCurrent(SDLCL_window, main_glcontext);
 }
 
